@@ -7,4 +7,8 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="colorAccent">#801F1F</color>
+    <color name="sectionTabColor">#2AADCD</color>
+    <color name="trendingSearch">#DA23DA3B</color>
+    <color name="trendingColor">#DFD621</color>
 </resources>

@@ -16,6 +16,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
@@ -40,6 +42,13 @@ public class StockDetailActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.detail_menu,menu);
+        MenuItem menuItem = menu.findItem(R.id.star);
+        return true;
+    }
+
     public void getStockDetailRequest(String ticker){
         RequestQueue rq = Volley.newRequestQueue(StockDetailActivity.this);
         String url = "http://stockbroker2-env.eba-3yim8bsf.us-west-2.elasticbeanstalk.com/details/" + ticker;
@@ -53,11 +62,14 @@ public class StockDetailActivity extends AppCompatActivity {
                             Log.i(tag, data.toString());
                             JSONObject meta = details.getJSONObject("meta");
                             name.setText(meta.getString("name"));
+                            String lastPrice = "$" + data.getString("last");
+                            Log.i(tag, lastPrice);
                            price.setText("$" + data.getString("last"));
                             tickerView.setText(data.getString("ticker"));
                             Long changePrice = data.getLong("last") - data.getLong("prevClose");
                             Log.i(tag, changePrice.toString());
-//                            change.setText( new Long(data.getLong("last") - data.getLong("prevClose")).toString());
+                            String changePriceText = "$" + changePrice;
+                            change.setText(changePriceText);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
