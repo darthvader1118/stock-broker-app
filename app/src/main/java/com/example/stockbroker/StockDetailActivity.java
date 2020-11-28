@@ -31,7 +31,7 @@ public class StockDetailActivity extends AppCompatActivity {
     String tag = "detailActivity";
     boolean isSaved = false;
     public static final String WATCHLIST_FILE = "watchlist";
-
+    public static final String PORFTFOLIO_FILE = "portfolio";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,6 +51,14 @@ public class StockDetailActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.detail_menu,menu);
         MenuItem menuItem = menu.findItem(R.id.star);
+        SharedPreferences watchlist = getSharedPreferences(WATCHLIST_FILE,  MODE_PRIVATE);
+        String ticker =  getIntent().getStringExtra("ticker").toLowerCase();
+        String storedValue = watchlist.getString(ticker, "didn't work");
+        Log.i(tag, "storedValue is: " + storedValue);
+        if(storedValue.toLowerCase().equals(ticker.toLowerCase())){
+            menuItem.setIcon(R.drawable.ic_baseline_star_24);
+            isSaved = true;
+        }
 //        menuItem.setOnMenuItemClickListener(starToggle);
         Log.i(tag,"menu added");
         return super.onCreateOptionsMenu(menu);
@@ -82,6 +90,7 @@ public class StockDetailActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
+
         if(id == R.id.star){
             if(isSaved){
                 item.setIcon(R.drawable.ic_baseline_star_border_24);
@@ -101,14 +110,14 @@ public class StockDetailActivity extends AppCompatActivity {
         SharedPreferences.Editor editor = watchlist.edit();
         String ticker =  tickerView.getText().toString();
         Log.i(tag, ticker + " saved to watchlist");
-        editor.putString(ticker, ticker);
+        editor.putString(ticker.toLowerCase(), ticker);
         editor.apply();
     }
 
     public void removeFromWatchlist(){
         SharedPreferences watchlist = getSharedPreferences(WATCHLIST_FILE,  MODE_PRIVATE);
         SharedPreferences.Editor editor = watchlist.edit();
-        String ticker =  tickerView.getText().toString();
+        String ticker =  tickerView.getText().toString().toLowerCase();
         Log.i(tag, ticker + " removed from watchlist");
         editor.remove(ticker);
         editor.apply();
