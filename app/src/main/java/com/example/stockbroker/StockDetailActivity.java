@@ -12,6 +12,7 @@ import com.android.volley.toolbox.Volley;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
@@ -27,6 +28,7 @@ import org.json.JSONObject;
 public class StockDetailActivity extends AppCompatActivity {
     TextView tickerView,name,price,change,portfolio, shares;
     String tag = "detailActivity";
+    boolean isSaved = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,7 +48,47 @@ public class StockDetailActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.detail_menu,menu);
         MenuItem menuItem = menu.findItem(R.id.star);
-        return true;
+//        menuItem.setOnMenuItemClickListener(starToggle);
+        Log.i(tag,"menu added");
+        return super.onCreateOptionsMenu(menu);
+    }
+
+//    MenuItem.OnMenuItemClickListener starToggle = new MenuItem.OnMenuItemClickListener() {
+//        @Override
+//        public boolean onMenuItemClick(MenuItem item) {
+//            Log.i(tag,"clicked");
+//            if(isSaved) {
+//                item.setIcon(R.drawable.ic_baseline_star_24);
+//            }else{
+//                item.setIcon(R.drawable.ic_baseline_star_border_24);
+//            }
+//            return false;
+//        }
+//    };
+
+//    public void onClickStar(){
+//        Log.i(tag,"clicked");
+//        if(isSaved) {
+//            item.setIcon(R.drawable.ic_baseline_star_24);
+//        }else{
+//            item.setIcon(R.drawable.ic_baseline_star_border_24);
+//        }
+//    }
+
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+        if(id == R.id.star){
+            if(isSaved){
+                item.setIcon(R.drawable.ic_baseline_star_border_24);
+            }
+            else{
+                item.setIcon(R.drawable.ic_baseline_star_24);
+            }
+            isSaved = !isSaved;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     public void getStockDetailRequest(String ticker){
