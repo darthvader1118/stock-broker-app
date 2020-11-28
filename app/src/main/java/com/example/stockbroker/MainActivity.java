@@ -36,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
 //    private ActivityMainBinding activityMainBinding;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        setTheme(R.style.Theme_StockBroker);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Log.i(tag,"--onCreate--");

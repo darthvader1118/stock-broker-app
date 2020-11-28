@@ -34,6 +34,7 @@ public class StockDetailActivity extends AppCompatActivity {
     public static final String PORFTFOLIO_FILE = "portfolio";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        setTheme(R.style.Theme_StockBroker);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_stock_detail);
         Intent stockDetail = getIntent();
@@ -157,4 +158,6 @@ public class StockDetailActivity extends AppCompatActivity {
         });
         rq.add(stringRequest);
     }
+
+
 }
