@@ -23,13 +23,16 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.GridView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class StockDetailActivity extends AppCompatActivity {
     TextView tickerView,name,price,change,portfolio, shares;
+    GridView statGrid;
     String tag = "detailActivity";
     boolean isSaved = false;
     public static final String WATCHLIST_FILE = "watchlist";
@@ -46,7 +49,9 @@ public class StockDetailActivity extends AppCompatActivity {
         name = (TextView) findViewById(R.id.name);
         price = (TextView) findViewById(R.id.price);
         change = (TextView) findViewById(R.id.change);
+        shares = (TextView) findViewById(R.id.shares);
         getStockDetailRequest(ticker);
+        getPortfolioAmount();
 
     }
 
@@ -67,27 +72,7 @@ public class StockDetailActivity extends AppCompatActivity {
         return super.onCreateOptionsMenu(menu);
     }
 
-//    MenuItem.OnMenuItemClickListener starToggle = new MenuItem.OnMenuItemClickListener() {
-//        @Override
-//        public boolean onMenuItemClick(MenuItem item) {
-//            Log.i(tag,"clicked");
-//            if(isSaved) {
-//                item.setIcon(R.drawable.ic_baseline_star_24);
-//            }else{
-//                item.setIcon(R.drawable.ic_baseline_star_border_24);
-//            }
-//            return false;
-//        }
-//    };
 
-//    public void onClickStar(){
-//        Log.i(tag,"clicked");
-//        if(isSaved) {
-//            item.setIcon(R.drawable.ic_baseline_star_24);
-//        }else{
-//            item.setIcon(R.drawable.ic_baseline_star_border_24);
-//        }
-//    }
 
 
     @Override
@@ -115,6 +100,7 @@ public class StockDetailActivity extends AppCompatActivity {
         Log.i(tag, ticker + " saved to watchlist");
         editor.putString(ticker.toLowerCase(), ticker);
         editor.apply();
+        Toast.makeText(StockDetailActivity.this,"saved to watchlist", Toast.LENGTH_SHORT).show();
     }
 
     public void removeFromWatchlist(){
@@ -124,6 +110,7 @@ public class StockDetailActivity extends AppCompatActivity {
         Log.i(tag, ticker + " removed from watchlist");
         editor.remove(ticker);
         editor.apply();
+        Toast.makeText(StockDetailActivity.this,"removed from watchlist", Toast.LENGTH_SHORT).show();
     }
 
     public void getStockDetailRequest(String ticker){
@@ -165,6 +152,17 @@ public class StockDetailActivity extends AppCompatActivity {
             }
         });
         rq.add(stringRequest);
+    }
+
+    public void getPortfolioAmount(){
+        SharedPreferences portfolio = getSharedPreferences(PORFTFOLIO_FILE, MODE_PRIVATE);
+        int shareAmt = portfolio.getInt("shares", 0);
+        if(shareAmt == 0){
+            shares.setText("you have 0 shares of " + getIntent().getStringExtra("ticker").toUpperCase() + " Start trading!");
+        }
+        else{
+            shares.setText("Shares owned: " + shareAmt + " Market value: " + shareAmt*Integer.parseInt(price.getText().toString()));
+        }
     }
 
 

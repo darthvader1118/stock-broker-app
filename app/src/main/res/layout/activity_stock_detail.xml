@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fillViewport="true"
     tools:context=".StockDetailActivity">
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -12,8 +13,8 @@
         <include
             android:id="@+id/include"
             layout="@layout/content_stock_detail"
-            tools:layout_editor_absoluteX="16dp"
-            tools:layout_editor_absoluteY="7dp" />
+            tools:layout_editor_absoluteX="0dp"
+            tools:layout_editor_absoluteY="32dp" />
 
         <WebView
             android:id="@+id/webView"
@@ -80,26 +81,54 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/price" />
 
-    <TextView
-        android:id="@+id/portfolio"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="188dp"
-        android:text="Portfolio"
-        app:layout_constraintEnd_toStartOf="@+id/button"
-        app:layout_constraintTop_toBottomOf="@+id/webView" />
+        <TextView
+            android:id="@+id/portfolio"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="188dp"
+            android:text="Portfolio"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@+id/button"
+            app:layout_constraintTop_toBottomOf="@+id/webView" />
 
-    <TextView
-        android:id="@+id/shares"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:layout_marginEnd="128dp"
-        android:text="Share amount"
-        app:layout_constraintEnd_toStartOf="@+id/button"
-        app:layout_constraintTop_toBottomOf="@+id/portfolio" />
+        <TextView
+            android:id="@+id/shares"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:layout_marginEnd="128dp"
+            android:text="Share amount"
+            android:textAlignment="viewStart"
+            app:layout_constraintEnd_toStartOf="@+id/button"
+            app:layout_constraintHorizontal_bias="0.959"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/portfolio" />
+
+        <TextView
+            android:id="@+id/stats"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="104dp"
+            android:layout_marginEnd="356dp"
+            android:text="Stats"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/portfolio" />
+
+        <GridView
+            android:id="@+id/statsContent"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:numColumns="3"
+            android:horizontalSpacing="30dp"
+            android:verticalSpacing="30dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/stats"
+            app:layout_constraintVertical_bias="0.08" />
 
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>
