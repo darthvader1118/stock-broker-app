@@ -1,6 +1,7 @@
 package com.example.stockbroker;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import com.android.volley.Request;
@@ -29,12 +30,14 @@ public class StockDetailActivity extends AppCompatActivity {
     TextView tickerView,name,price,change,portfolio, shares;
     String tag = "detailActivity";
     boolean isSaved = false;
+    public static final String WATCHLIST_FILE = "watchlist";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_stock_detail);
-        Intent stockeDetail = getIntent();
-        String ticker = stockeDetail.getStringExtra("ticker");
+        Intent stockDetail = getIntent();
+        String ticker = stockDetail.getStringExtra("ticker");
         Log.i(tag,ticker);
         tickerView = (TextView) findViewById(R.id.ticker);
         name = (TextView) findViewById(R.id.name);
@@ -82,13 +85,33 @@ public class StockDetailActivity extends AppCompatActivity {
         if(id == R.id.star){
             if(isSaved){
                 item.setIcon(R.drawable.ic_baseline_star_border_24);
+                removeFromWatchlist();
             }
             else{
                 item.setIcon(R.drawable.ic_baseline_star_24);
+                saveToWatchlist();
             }
             isSaved = !isSaved;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    public void saveToWatchlist(){
+        SharedPreferences watchlist = getSharedPreferences(WATCHLIST_FILE,  MODE_PRIVATE);
+        SharedPreferences.Editor editor = watchlist.edit();
+        String ticker =  tickerView.getText().toString();
+        Log.i(tag, ticker + " saved to watchlist");
+        editor.putString(ticker, ticker);
+        editor.apply();
+    }
+
+    public void removeFromWatchlist(){
+        SharedPreferences watchlist = getSharedPreferences(WATCHLIST_FILE,  MODE_PRIVATE);
+        SharedPreferences.Editor editor = watchlist.edit();
+        String ticker =  tickerView.getText().toString();
+        Log.i(tag, ticker + " removed from watchlist");
+        editor.remove(ticker);
+        editor.apply();
     }
 
     public void getStockDetailRequest(String ticker){
