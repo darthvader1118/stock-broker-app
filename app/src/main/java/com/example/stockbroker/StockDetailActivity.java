@@ -2,6 +2,7 @@ package com.example.stockbroker;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 
 import com.android.volley.Request;
@@ -16,6 +17,7 @@ import com.google.android.material.snackbar.Snackbar;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.util.Log;
 import android.view.Menu;
@@ -142,6 +144,12 @@ public class StockDetailActivity extends AppCompatActivity {
                            price.setText("$" + data.getString("last"));
                             tickerView.setText(data.getString("ticker"));
                             Long changePrice = data.getLong("last") - data.getLong("prevClose");
+                            if(changePrice < 0){
+                                change.setTextColor(Color.RED);
+                            }
+                            else{
+                                change.setTextColor(Color.GREEN);
+                            }
                             Log.i(tag, changePrice.toString());
                             String changePriceText = "$" + changePrice;
                             change.setText(changePriceText);
