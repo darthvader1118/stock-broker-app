@@ -12,6 +12,6 @@
     <string name="search_hint">search_hint</string>
     <string name="element_text">stock</string>
     <string name="ticker">Ticker</string>
-    <string name="title_activity_stock_detail">StockDetailActivity</string>
+    <string name="title_activity_stock_detail">Stocks</string>
     <string name="trade">Trade</string>
 </resources>
