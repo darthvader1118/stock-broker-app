@@ -1,5 +1,6 @@
 package com.example.stockbroker;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -19,13 +20,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.GridView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,15 +38,19 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class StockDetailActivity extends AppCompatActivity {
     TextView tickerView,name,price,change,portfolio, shares, about, showMore;
     GridView statGrid;
     String tag = "detailActivity";
     boolean isSaved = false;
+    private Timer timer = new Timer();
     public static final String WATCHLIST_FILE = "watchlist";
     public static final String PORFTFOLIO_FILE = "portfolio";
     JSONObject stats;
+    JSONObject priceData;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         setTheme(R.style.Theme_StockBroker);
@@ -56,7 +64,13 @@ public class StockDetailActivity extends AppCompatActivity {
         price = (TextView) findViewById(R.id.price);
         change = (TextView) findViewById(R.id.change);
         shares = (TextView) findViewById(R.id.shares);
-        getStockDetailRequest(ticker);
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                getStockDetailRequest(ticker);
+            }
+        }, 0, 15*1000);
+
         getPortfolioAmount();
         about = (TextView) findViewById(R.id.aboutContent);
 
@@ -133,9 +147,10 @@ public class StockDetailActivity extends AppCompatActivity {
                         try {
                             JSONObject details = new JSONObject(response);
                             JSONObject data = details.getJSONObject("data");
-
+                            priceData = data;
                             Log.i(tag, data.toString());
                             JSONObject meta = details.getJSONObject("meta");
+                            stats = meta;
                             name.setText(meta.getString("name"));
                             String lastPrice = "$" + data.getString("last");
                             Log.i(tag, lastPrice);
@@ -218,5 +233,51 @@ public class StockDetailActivity extends AppCompatActivity {
             about.setEllipsize(TextUtils.TruncateAt.END);
             showMore.setText("Show More...");
         }
+    }
+
+    public void onClickTrade(View view) throws JSONException {
+        final Dialog tradeDialog = new Dialog(StockDetailActivity.this);
+        tradeDialog.setContentView(R.layout.trade_dialog);
+        tradeDialog.setTitle("Trade");
+        TextView header = (TextView) tradeDialog.findViewById(R.id.trade_title);
+        header.setText("Trade " + stats.getString("name") + " shares");
+        TextView shareTotal = (TextView) tradeDialog.findViewById(R.id.total);
+        EditText number = (EditText) tradeDialog.findViewById(R.id.share_number);
+        number.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                try {
+                    shareTotal.setText( "0 x $" + priceData.getLong("last") + "/share = $" + Integer.parseInt(number.getText().toString())*priceData.getLong("last"));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                try {
+                    shareTotal.setText(s.toString()+ "x$" + priceData.getLong("last") + "/share = $" + Integer.parseInt(number.getText().toString())*priceData.getLong("last"));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
+
+        //
+
+        tradeDialog.show();
+
+
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
 }
