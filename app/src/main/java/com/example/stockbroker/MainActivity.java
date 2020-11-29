@@ -129,7 +129,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onQueryTextSubmit(String query) {
                 Log.i(tag, query);
-
+                Intent detailIntent = new Intent(MainActivity.this, StockDetailActivity.class);
+                detailIntent.putExtra("ticker", query);
+                MainActivity.this.startActivity(detailIntent);
                 return false;
             }
 
@@ -174,7 +176,7 @@ public class MainActivity extends AppCompatActivity {
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                    Log.i(tag, "that didn't work");
+                    Log.i(tag, error.toString());
             }
         });
         rq.add(stringRequest);

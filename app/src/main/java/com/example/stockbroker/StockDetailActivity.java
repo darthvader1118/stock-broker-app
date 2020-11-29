@@ -22,13 +22,17 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.GridView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
 
 public class StockDetailActivity extends AppCompatActivity {
     TextView tickerView,name,price,change,portfolio, shares;
@@ -37,6 +41,7 @@ public class StockDetailActivity extends AppCompatActivity {
     boolean isSaved = false;
     public static final String WATCHLIST_FILE = "watchlist";
     public static final String PORFTFOLIO_FILE = "portfolio";
+    JSONObject stats;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         setTheme(R.style.Theme_StockBroker);
@@ -52,6 +57,7 @@ public class StockDetailActivity extends AppCompatActivity {
         shares = (TextView) findViewById(R.id.shares);
         getStockDetailRequest(ticker);
         getPortfolioAmount();
+
 
     }
 
@@ -123,6 +129,7 @@ public class StockDetailActivity extends AppCompatActivity {
                         try {
                             JSONObject details = new JSONObject(response);
                             JSONObject data = details.getJSONObject("data");
+
                             Log.i(tag, data.toString());
                             JSONObject meta = details.getJSONObject("meta");
                             name.setText(meta.getString("name"));
@@ -140,6 +147,7 @@ public class StockDetailActivity extends AppCompatActivity {
                             Log.i(tag, changePrice.toString());
                             String changePriceText = "$" + changePrice;
                             change.setText(changePriceText);
+                            setStatGrid(data);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -158,11 +166,37 @@ public class StockDetailActivity extends AppCompatActivity {
         SharedPreferences portfolio = getSharedPreferences(PORFTFOLIO_FILE, MODE_PRIVATE);
         int shareAmt = portfolio.getInt("shares", 0);
         if(shareAmt == 0){
+            Log.i(tag, "you have 0 shares of " + getIntent().getStringExtra("ticker").toUpperCase() + " Start trading!");
             shares.setText("you have 0 shares of " + getIntent().getStringExtra("ticker").toUpperCase() + " Start trading!");
         }
         else{
             shares.setText("Shares owned: " + shareAmt + " Market value: " + shareAmt*Integer.parseInt(price.getText().toString()));
         }
+    }
+
+    public void setStatGrid(JSONObject stats) throws JSONException {
+        statGrid = (GridView) findViewById(R.id.statsContent);
+        statGrid.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if(event.getAction() == MotionEvent.ACTION_MOVE){
+                    return true;
+                }
+                return false;
+            }
+        });
+        ArrayList<String> statItems = new ArrayList<>();
+        statItems.add("Current Price: "  +stats.getString("last"));
+        statItems.add("Low: " + stats.getString("low"));
+        statItems.add("Bid Price: " + stats.getString("bidPrice"));
+        statItems.add("Open Price: " + stats.getString("open"));
+        statItems.add("Mid: " + stats.getString("mid"));
+        statItems.add("High: " + stats.getString("high"));
+        statItems.add("Volume: " + stats.getString("volume"));
+
+        ArrayAdapter<String> statGridAdapter = new ArrayAdapter<String>(StockDetailActivity.this, android.R.layout.simple_list_item_1, statItems);
+        statGrid.setAdapter(statGridAdapter);
+
     }
 
 
