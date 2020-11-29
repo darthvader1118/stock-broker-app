@@ -293,7 +293,11 @@ public class StockDetailActivity extends AppCompatActivity {
                     }
                     else {
                         Gson gson = new Gson();
-                        editPortfolio.putString(stats.getString("ticker"), gson.toJson(new Portfolio(stats.getString("ticker"), shares, shareTot)));
+                        Portfolio newItem  = new Portfolio(dialogTicker,Double.doubleToLongBits(0.0),Double.doubleToLongBits(0.0));
+                        Portfolio item = gson.fromJson(portfolio.getString(dialogTicker, gson.toJson(newItem)),Portfolio.class);
+                        Long newShares = item.shares + shares;
+                        Long newCost = item.cost + shares*priceData.getLong("last");
+                        editPortfolio.putString(stats.getString("ticker"), gson.toJson(new Portfolio(stats.getString("ticker"), newShares, newCost)));
                         editPortfolio.putLong("cash", cash);
                         editPortfolio.apply();
                         tradeDialog.dismiss();
