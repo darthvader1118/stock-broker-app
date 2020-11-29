@@ -19,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -35,7 +36,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 
 public class StockDetailActivity extends AppCompatActivity {
-    TextView tickerView,name,price,change,portfolio, shares;
+    TextView tickerView,name,price,change,portfolio, shares, about, showMore;
     GridView statGrid;
     String tag = "detailActivity";
     boolean isSaved = false;
@@ -57,6 +58,9 @@ public class StockDetailActivity extends AppCompatActivity {
         shares = (TextView) findViewById(R.id.shares);
         getStockDetailRequest(ticker);
         getPortfolioAmount();
+        about = (TextView) findViewById(R.id.aboutContent);
+
+
 
 
     }
@@ -148,6 +152,7 @@ public class StockDetailActivity extends AppCompatActivity {
                             String changePriceText = "$" + changePrice;
                             change.setText(changePriceText);
                             setStatGrid(data);
+                            about.setText(meta.getString("description"));
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -200,4 +205,18 @@ public class StockDetailActivity extends AppCompatActivity {
     }
 
 
+
+    public void aboutMore(View view) {
+        showMore = (TextView) findViewById(R.id.showMore);
+        if(showMore.getText().toString().equals("Show More...")) {
+            about.setMaxLines(Integer.MAX_VALUE);
+            about.setEllipsize(null);
+            showMore.setText("Show Less");
+        }
+        else{
+            about.setMaxLines(3);
+            about.setEllipsize(TextUtils.TruncateAt.END);
+            showMore.setText("Show More...");
+        }
+    }
 }
