@@ -14,6 +14,7 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.gson.Gson;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -29,6 +30,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridView;
 import android.widget.TextView;
@@ -246,11 +248,11 @@ public class StockDetailActivity extends AppCompatActivity {
         number.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                try {
-                    shareTotal.setText( "0 x $" + priceData.getLong("last") + "/share = $" + Integer.parseInt(number.getText().toString())*priceData.getLong("last"));
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+//                try {
+//                    shareTotal.setText( "0 x $" + priceData.getLong("last") + "/share = $" + Integer.parseInt(number.getText().toString())*priceData.getLong("last"));
+//                } catch (JSONException e) {
+//                    e.printStackTrace();
+//                }
             }
 
             @Override
@@ -267,8 +269,111 @@ public class StockDetailActivity extends AppCompatActivity {
 
             }
         });
+        Button buy = (Button) tradeDialog.findViewById(R.id.buy);
+        buy.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
 
-        //
+                SharedPreferences portfolio = getSharedPreferences(PORFTFOLIO_FILE, MODE_PRIVATE);
+                SharedPreferences.Editor editPortfolio = portfolio.edit();
+                Long shares = Long.parseLong(number.getText().toString());
+                try {
+                    String dialogTicker = stats.getString("ticker");
+                    Long shareTot = priceData.getLong("last")*shares;
+                    Long cash = portfolio.getLong("cash", 20000);
+                    cash = cash - shareTot;
+                    if(cash < 0){
+                        Toast.makeText(StockDetailActivity.this,"Not enough money to buy", Toast.LENGTH_SHORT).show();
+                    }
+                    else if(Integer.parseInt(number.getText().toString()) <= 0){
+                        Toast.makeText(StockDetailActivity.this,"Cannot buy less than 0 shares", Toast.LENGTH_SHORT).show();
+                    }
+                    else if(number.getText().toString().contains("[a-zA-Z]+")){
+                        Toast.makeText(StockDetailActivity.this,"please enter valid amount", Toast.LENGTH_SHORT).show();
+                    }
+                    else {
+                        Gson gson = new Gson();
+                        editPortfolio.putString(stats.getString("ticker"), gson.toJson(new Portfolio(stats.getString("ticker"), shares, shareTot)));
+                        editPortfolio.putLong("cash", cash);
+                        editPortfolio.apply();
+                        tradeDialog.dismiss();
+                        final Dialog successDialog = new Dialog(StockDetailActivity.this);
+                        successDialog.setContentView(R.layout.success_dialog);
+                        TextView message = (TextView) successDialog.findViewById(R.id.success_message);
+                        message.setText("You have successfully bought " + shares+ " shares of " + dialogTicker);
+                        Button done = (Button) successDialog.findViewById(R.id.done);
+                        done.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                successDialog.dismiss();
+                            }
+                        });
+                        successDialog.show();;
+                    }
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        });
+        Button sell = (Button) tradeDialog.findViewById(R.id.sell);
+        sell.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SharedPreferences portfolio = getSharedPreferences(PORFTFOLIO_FILE, MODE_PRIVATE);
+                SharedPreferences.Editor editPortfolio = portfolio.edit();
+                Gson gson = new Gson();
+
+                Long shares = Long.parseLong(number.getText().toString());
+                try {
+                    String dialogTicker = stats.getString("ticker");
+                    Portfolio newItem  = new Portfolio(dialogTicker,Double.doubleToLongBits(0.0),Double.doubleToLongBits(0.0));
+                    String stockData = portfolio.getString(dialogTicker, gson.toJson(newItem));
+                    Portfolio portfolioItem = gson.fromJson(stockData, Portfolio.class);
+                    Long currentShares = portfolioItem.shares;
+
+
+
+                    if(currentShares < shares){
+                        Toast.makeText(StockDetailActivity.this,"Not enough shares to sell", Toast.LENGTH_SHORT).show();
+                    }
+                    else if(Integer.parseInt(number.getText().toString()) <= 0){
+                        Toast.makeText(StockDetailActivity.this,"Cannot sell less than 0 shares", Toast.LENGTH_SHORT).show();
+                    }
+                    else if(number.getText().toString().contains("[a-zA-Z]+")){
+                        Toast.makeText(StockDetailActivity.this,"please enter valid amount", Toast.LENGTH_SHORT).show();
+                    }
+                    else{
+                        Long cash = portfolio.getLong("cash", 20000);
+                        Long shareTot = priceData.getLong("last") * shares;
+                        cash = cash + shareTot;
+                        currentShares = currentShares - shares;
+                        Long cost = portfolioItem.cost  - portfolioItem.cost/portfolioItem.shares*currentShares;
+                        editPortfolio.putLong("cash", cash);
+                        editPortfolio.putString(dialogTicker, gson.toJson(new Portfolio(dialogTicker,currentShares,cost)));
+                        editPortfolio.apply();
+                        tradeDialog.dismiss();
+                        final Dialog successDialog = new Dialog(StockDetailActivity.this);
+                        successDialog.setContentView(R.layout.success_dialog);
+                        TextView message = (TextView) successDialog.findViewById(R.id.success_message);
+                        message.setText("You have successfully sold " + shares+ " shares of " + dialogTicker);
+                        Button done = (Button) successDialog.findViewById(R.id.done);
+                        done.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                successDialog.dismiss();
+                            }
+                        });
+                        successDialog.show();;
+
+                    }
+                }catch (JSONException e){
+                    e.printStackTrace();
+                }
+            }
+        });
+
 
         tradeDialog.show();
 
