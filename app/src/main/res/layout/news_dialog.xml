@@ -1,6 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
     android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/newsImage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/dialog_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="title"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/newsImage" />
+
+    <ImageView
+        android:id="@+id/twitter"
+        android:layout_width="186dp"
+        android:src="@drawable/ic_twitter_logo_dialog"
+        android:layout_height="57dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/dialog_title"
+        tools:srcCompat="@drawable/ic_twitter_logo_dialog" />
+
+    <ImageView
+        android:id="@+id/chrome"
+        android:layout_width="224dp"
+        android:layout_height="57dp"
+        android:src="@drawable/ic_chrome"
+        app:layout_constraintStart_toEndOf="@+id/twitter"
+        app:layout_constraintTop_toBottomOf="@id/dialog_title"
+        tools:srcCompat="@drawable/ic_chrome" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
