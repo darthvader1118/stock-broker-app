@@ -4,12 +4,16 @@ import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.icu.util.DateInterval;
+import android.os.Build;
 import android.os.Bundle;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -17,9 +21,13 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.gson.Gson;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.cardview.widget.CardView;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.text.Editable;
 import android.text.TextUtils;
@@ -36,12 +44,16 @@ import android.widget.GridView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.time.*;
+import java.time.temporal.ChronoUnit;
 
 public class StockDetailActivity extends AppCompatActivity {
     TextView tickerView,name,price,change,portfolio, shares, about, showMore;
@@ -75,6 +87,7 @@ public class StockDetailActivity extends AppCompatActivity {
 
         getPortfolioAmount();
         about = (TextView) findViewById(R.id.aboutContent);
+        getNewsItems(ticker);
 
 
 
@@ -140,6 +153,7 @@ public class StockDetailActivity extends AppCompatActivity {
     }
 
     public void getStockDetailRequest(String ticker){
+
         RequestQueue rq = Volley.newRequestQueue(StockDetailActivity.this);
         String url = "http://stockbroker2-env.eba-3yim8bsf.us-west-2.elasticbeanstalk.com/details/" + ticker;
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
@@ -385,6 +399,53 @@ public class StockDetailActivity extends AppCompatActivity {
 
     }
 
+    public void getNewsItems(String ticker){
+        RecyclerView rv = (RecyclerView) findViewById(R.id.newsList);
+        rv.setLayoutManager(new LinearLayoutManager(StockDetailActivity.this));
+        rv.setNestedScrollingEnabled(false);
+        ArrayList<NewsItem> newsItems = new ArrayList<>();
+        RequestQueue rq = Volley.newRequestQueue(StockDetailActivity.this);
+        String url = "http://stockbroker2-env.eba-3yim8bsf.us-west-2.elasticbeanstalk.com/news/" + ticker;
+
+        JsonObjectRequest newsRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
+            @Override
+            public void onResponse(JSONObject response) {
+            try {
+                JSONArray articles = response.getJSONArray("articles");
+                for(int i = 0; i < articles.length(); i++){
+
+                        JSONObject article = articles.getJSONObject(i);
+                        String source = article.getJSONObject("source").getString("name");
+                        String title = article.getString("title");
+                        String articleUrl = article.getString("url");
+                        String imgUrl = article.getString("urlToImage");
+                        String pubDate = article.getString("publishedAt");
+//                        LocalDate published = LocalDate.parse(pubDate, DateTimeFormatter.ISO_DATE_TIME);
+//                        LocalDate now = LocalDate.now();
+//                        long dayDiff = ChronoUnit.DAYS.between(published,now);
+//                        String dateFrom = dayDiff + " days ago";
+                        String dateFrom = "something";
+                        NewsItem newsItem = new NewsItem(imgUrl,source, dateFrom,title,articleUrl);
+                        newsItems.add(newsItem);
+                }
+                NewsAdapter adapter = new NewsAdapter(StockDetailActivity.this, newsItems);
+                rv.setAdapter(adapter);
+            } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+
+            }
+        });
+        rq.add(newsRequest);
+    }
     @Override
     protected void onDestroy() {
         super.onDestroy();

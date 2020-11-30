@@ -40,7 +40,7 @@
         <TextView
             android:id="@+id/news_title"
             android:layout_width="405dp"
-            android:layout_height="22dp"
+            android:layout_height="wrap_content"
             android:text="News title"
             android:textColor="@color/black"
             app:layout_constraintStart_toStartOf="parent"
