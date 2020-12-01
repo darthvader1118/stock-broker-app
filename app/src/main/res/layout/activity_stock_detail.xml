@@ -9,21 +9,24 @@
     tools:scrollY="150px"
     tools:context=".StockDetailActivity">
 
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:id="@+id/stock_details">
 
         <WebView
             android:id="@+id/webView"
-            android:layout_width="409dp"
-            android:layout_height="259dp"
-            android:layout_marginTop="108dp"
+            android:layout_width="407dp"
+            android:layout_height="418dp"
+            android:layout_marginTop="116dp"
             android:visibility="visible"
+            app:layout_constrainedWidth="true"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            tools:visibility="gone">
+            tools:visibility="visible">
 
 
         </WebView>

@@ -1,9 +1,10 @@
 package com.example.stockbroker;
 
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Color;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -18,40 +19,27 @@ import com.android.volley.toolbox.Volley;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import io.github.luizgrp.sectionedrecyclerviewadapter.Section;
-import io.github.luizgrp.sectionedrecyclerviewadapter.SectionParameters;
-import io.github.luizgrp.sectionedrecyclerviewadapter.utils.EmptyViewHolder;
-
-public class FavoritesSection extends Section {
+public class FavoritesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
     private Timer timer = new Timer();
     Context c;
     ArrayList<String> favoritesItems;
-    public FavoritesSection(ArrayList<String> favoritesList, Context context) {
-        super(SectionParameters.builder().itemResourceId(R.layout.favorites_item)
-               // .headerResourceId(R.layout.favorites_header)
-                .build());
-        this.c = context;
-        this.favoritesItems = favoritesList;
+    public FavoritesAdapter(Context c, ArrayList<String> favorites) {
+        this.c = c;
+        this.favoritesItems = favorites;
     }
-
+    @NonNull
     @Override
-    public int getContentItemsTotal() {
-        return favoritesItems.size();
-    }
-
-    @Override
-    public RecyclerView.ViewHolder getItemViewHolder(View view) {
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.favorites_item, null);
         return new PortfolioHolder(view);
     }
 
     @Override
-    public void onBindItemViewHolder(RecyclerView.ViewHolder holder, int position) {
-        DecimalFormat df2 = new DecimalFormat("#.##");
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         PortfolioHolder favoritesHolder = (PortfolioHolder) holder;
         favoritesHolder.tickerView.setText(favoritesItems.get(position));
         timer.scheduleAtFixedRate(new TimerTask() {
@@ -65,18 +53,18 @@ public class FavoritesSection extends Section {
                         try {
                             JSONObject data = response.getJSONObject("data");
                             JSONObject meta = response.getJSONObject("meta");
-                            Double currentPrice = data.getDouble("last");
-                            Double priceChange = data.getDouble("last") - data.getDouble("prevClose");
+                            Long currentPrice = data.getLong("last");
+                            Long priceChange = data.getLong("last") - data.getLong("prevClose");
                             favoritesHolder.sharesView.setText(meta.getString("name"));
-                            favoritesHolder.price.setText(df2.format(currentPrice));
+                            favoritesHolder.price.setText(currentPrice.toString());
                             if(priceChange < 0){
                                 favoritesHolder.change.setTextColor(Color.RED);
-                                favoritesHolder.change.setText("" +df2.format(Math.abs(priceChange)));
+                                favoritesHolder.change.setText("" +Math.abs(priceChange));
                             }
                             else{
                                 favoritesHolder.change.setTextColor(Color.GREEN);
                                 favoritesHolder.line.setImageResource(R.drawable.ic_twotone_trending_up_24);
-                                favoritesHolder.change.setText(df2.format(priceChange));
+                                favoritesHolder.change.setText(priceChange.toString());
                             }
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -92,18 +80,11 @@ public class FavoritesSection extends Section {
                 rq.add(priceRequest);
             }
         },0,15*1000);
-        favoritesHolder.arrow.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent detailIntent = new Intent(c, StockDetailActivity.class);
-                detailIntent.putExtra("ticker", favoritesItems.get(position));
-                c.startActivity(detailIntent);
-            }
-        });
+
     }
- //   @Override
-//    public RecyclerView.ViewHolder getHeaderViewHolder(View view) {
-//        // return an empty instance of ViewHolder for the headers of this section
-//        return new EmptyViewHolder(view);
-//    }
+
+    @Override
+    public int getItemCount() {
+        return favoritesItems.size();
+    }
 }

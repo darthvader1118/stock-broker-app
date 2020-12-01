@@ -2,11 +2,13 @@ package com.example.stockbroker;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.android.volley.Request;
@@ -21,39 +23,27 @@ import org.json.JSONObject;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import io.github.luizgrp.sectionedrecyclerviewadapter.Section;
-import io.github.luizgrp.sectionedrecyclerviewadapter.SectionParameters;
-import io.github.luizgrp.sectionedrecyclerviewadapter.utils.EmptyViewHolder;
-//import io.github.luizgrp.sectionedrecyclerviewadapter.R;
-
-public class PortfolioSection extends Section {
+public class PortfolioAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
     private Timer timer = new Timer();
     Context c;
     ArrayList<Portfolio> portfolioItems;
-    public PortfolioSection(ArrayList<Portfolio> portfolioList, Context context){
-
-        super(SectionParameters.builder().itemResourceId(R.layout.favorites_item)
-               // .headerResourceId(R.layout.portfolio_header)
-                .build());
-        this.portfolioItems = portfolioList;
-        this.c = context;
-    }
-    @Override
-    public int getContentItemsTotal() {
-        return portfolioItems.size();
+    public PortfolioAdapter(Context c, ArrayList<Portfolio> favorites) {
+        this.c = c;
+        this.portfolioItems = favorites;
     }
 
+    @NonNull
     @Override
-    public RecyclerView.ViewHolder getItemViewHolder(View view) {
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.favorites_item, null);
         return new PortfolioHolder(view);
     }
 
     @Override
-    public void onBindItemViewHolder(RecyclerView.ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         DecimalFormat df2 = new DecimalFormat("#.##");
         PortfolioHolder portfolioHolder = (PortfolioHolder) holder;
         portfolioHolder.tickerView.setText(portfolioItems.get(position).ticker);
@@ -107,18 +97,10 @@ public class PortfolioSection extends Section {
         });
 
 
-
-
     }
-//    @Override
-//    public RecyclerView.ViewHolder getHeaderViewHolder(View view){
-//        return new PortfolioHeaderViewHolder(view);
-//    }
-//    @Override
-//    public void onBindHeaderViewHolder(final RecyclerView.ViewHolder holder) {
-//        final PortfolioHeaderViewHolder headerHolder = (PortfolioHeaderViewHolder) holder;
-//
-//        headerHolder.header.setText("Portfolio");
-//    }
 
+    @Override
+    public int getItemCount() {
+        return portfolioItems.size();
+    }
 }

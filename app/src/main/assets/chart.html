@@ -7,6 +7,9 @@
     <script src="https://code.highcharts.com/stock/modules/export-data.js"></script>
     <script src="https://code.highcharts.com/stock/indicators/indicators.js"></script>
     <script src="https://code.highcharts.com/stock/indicators/vwap.js"></script>
+    <script src="https://code.highcharts.com/stock/indicators/volume-by-price.js"></script>
+    <script src="https://code.highcharts.com/highcharts-more.js"></script>
+    
 </head>
     <body>
     <div id="chart" class="chart"></div>
@@ -14,117 +17,131 @@
     <script>
        
         $(document).ready(function(){
-            function loadGraph(data){
-        var ohlc = [];
-        var volume = [];
-      for(var i = 0; i < data.length; i++){
-        ohlc.push([
-          data[i][0],
-          data[i][1], // open
-            data[i][2], // high
-            data[i][3], // low
-            data[i][4] // 
-        ]);
-        volume.push([
-          data[i][0],
-          data[i][5]
-        ])
-      }
-      Highcharts.stockChart('chart', {
-        chart: {
-            scrollablePlotArea: {
-              minWidth: 10
+//          
+        var ticker = getParameters(document.location.search.substring(1))['ticker'];
+        var date = new Date();
+        fetch('https://cors-anywhere.herokuapp.com/http://stockbroker2-env.eba-3yim8bsf.us-west-2.elasticbeanstalk.com/history/' + ticker +'/' +date.toISOString().split('T')[0],{
+            method: "GET",
+            headers: {
+            'Content-Type': 'application/json',
+            "X-Requested-With": "XMLHttpRequest"
+            // 'Content-Type': 'application/x-www-form-urlencoded',
             }
-        },
-        navigator: {
-          enabled:true
-        },
-        plotOptions:{
-          series: {
-            showInNavigator: true
-          }
-        },
-        rangeSelector: {
-          enabled: true,
-          selected: 1
-        },
-        title: {
-          text: 'Historical'
-        },
-        subtitle: {
-          text: 'with SMA and volume by price technical indicators' 
-        },
-        xAxis: {
-          type: 'datetime'
-        },
-        yAxis: [{
-          startOnTick: false,
-          endOnTick: false,
-          labels: {
-              align: 'right',
-              x: -3
-          },
-          title: {
-              text: 'OHLC'
-          },
-          height: '60%',
-          lineWidth: 2,
-          resize: {
-              enabled: true
-          }
-      }, {
-          labels: {
-              align: 'right',
-              x: -3
-          },
-          title: {
-              text: 'Volume'
-          },
-          top: '65%',
-          height: '35%',
-          offset: 0,
-          lineWidth: 2
-      }],
-      tooltip: {
-        split: true
-    },
-    series: [{
-      type: 'candlestick',
-      name: stock,
-      id: 'ticker',
-      zIndex: 2,
-      data: ohlc
-  }, {
-      type: 'column',
-      name: 'Volume',
-      id: 'volume',
-      data: volume,
-      yAxis: 1
-  }, {
-      type: 'vbp',
-      linkedTo: 'ticker',
-      params: {
-          volumeSeriesID: 'volume'
-      },
-      dataLabels: {
-          enabled: false
-      },
-      zoneLines: {
-          enabled: false
-      }
-  }, {
-      type: 'sma',
-      linkedTo: 'ticker',
-      zIndex: 1,
-      marker: {
-          enabled: false
-      }
-  }]
-      });
-
-    }
         })
-
+        .then(response => response.json())
+        .then(result => {
+            // console.log(result);
+            var ohlc = [];
+                var volume = [];
+            for(var i = 0; i < result.length; i++){
+                ohlc.push([
+                result[i][0],
+                result[i][1], // open
+                result[i][2], // high
+                result[i][3], // low
+                result[i][4] // 
+                ]);
+                volume.push([
+                result[i][0],
+                result[i][5]
+                ])
+               
+            }
+            console.log(ohlc);
+            console.log(volume);
+            Highcharts.stockChart('chart', {
+                chart: {
+                    scrollablePlotArea: {
+                    minWidth: 10
+                    }
+                },
+                navigator: {
+                enabled:true
+                },
+                plotOptions:{
+                series: {
+                    showInNavigator: true
+                }
+                },
+                rangeSelector: {
+                enabled: true,
+                selected: 1
+                },
+                title: {
+                text: ticker.toLocaleUpperCase() + ' Historical'
+                },
+                subtitle: {
+                text: 'with SMA and volume by price technical indicators' 
+                },
+                xAxis: {
+                type: 'datetime'
+                },
+                yAxis: [{
+                startOnTick: false,
+                endOnTick: false,
+                labels: {
+                    align: 'right',
+                    x: -3
+                },
+                title: {
+                    text: 'OHLC'
+                },
+                height: '60%',
+                lineWidth: 2,
+                resize: {
+                    enabled: true
+                }
+            }, {
+                labels: {
+                    align: 'right',
+                    x: -3
+                },
+                title: {
+                    text: 'Volume'
+                },
+                top: '65%',
+                height: '35%',
+                offset: 0,
+                lineWidth: 2
+            }],
+            tooltip: {
+                split: true
+            },
+            series: [{
+            type: 'candlestick',
+            name: ticker,
+            id: 'ticker',
+            zIndex: 2,
+            data: ohlc
+        }, {
+            type: 'column',
+            name: 'Volume',
+            id: 'volume',
+            data: volume,
+            yAxis: 1
+        }, {
+            type: 'vbp',
+            linkedTo: 'ticker',
+            params: {
+                volumeSeriesID: 'volume'
+            },
+            dataLabels: {
+                enabled: false
+            },
+            zoneLines: {
+                enabled: false
+            }
+        }, {
+            type: 'sma',
+            linkedTo: 'ticker',
+            zIndex: 1,
+            marker: {
+                enabled: false
+            }
+        }]
+            });
+        })
+    })
     function getParameters(query) {
         var parts = query.split('&');
         var params = {};
@@ -139,10 +156,10 @@
     document.addEventListener("load", function() {
     console.log('here')
     var params = getParameters(document.location.search.substring(1));
-    if(params.hasOwnProperty('response')) {
+    if(params.hasOwnProperty('ticker')) {
        console.log(params['response']);
     }
     });
-    
+    //'https://cors-anywhere.herokuapp.com/http://stockbroker2-env.eba-3yim8bsf.us-west-2.elasticbeanstalk.com/history/' + ticker +'/' +date.toISOString().split('T')[0]
     </script>
 </html>

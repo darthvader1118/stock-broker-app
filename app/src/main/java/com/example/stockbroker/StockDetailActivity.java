@@ -43,6 +43,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -51,6 +52,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.text.DateFormat;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -62,6 +64,9 @@ import java.time.*;
 import java.time.temporal.ChronoUnit;
 
 public class StockDetailActivity extends AppCompatActivity {
+    private static DecimalFormat df2 = new DecimalFormat("#.##");
+    ConstraintLayout constraintLayout;
+    private ProgressBar spinner;
     TextView tickerView,name,price,change,portfolio, shares, about, showMore;
     GridView statGrid;
     WebView wv;
@@ -70,14 +75,19 @@ public class StockDetailActivity extends AppCompatActivity {
     private Timer timer = new Timer();
     public static final String WATCHLIST_FILE = "watchlist";
     public static final String PORFTFOLIO_FILE = "portfolio";
+    public static final String reqTag2 = "Detail request";
     JSONObject stats;
     JSONObject priceData;
+    RequestQueue rq;
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         setTheme(R.style.Theme_StockBroker);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_stock_detail);
+//        constraintLayout = (ConstraintLayout) findViewById(R.id.stock_details);
+//        constraintLayout.setVisibility(View.GONE);
+        rq = Volley.newRequestQueue(StockDetailActivity.this);
         Intent stockDetail = getIntent();
         String ticker = stockDetail.getStringExtra("ticker");
         Log.i(tag,ticker);
@@ -86,14 +96,14 @@ public class StockDetailActivity extends AppCompatActivity {
         wv.clearCache(true);
         wv.getSettings().setDomStorageEnabled(true);
         wv.setWebViewClient(new WebViewClient());
-        wv.loadUrl("file:///android_asset/chart.html");
+        wv.loadUrl("file:///android_asset/chart.html?ticker=" + ticker);
         tickerView = (TextView) findViewById(R.id.ticker);
         name = (TextView) findViewById(R.id.name);
         price = (TextView) findViewById(R.id.price);
         change = (TextView) findViewById(R.id.change);
         shares = (TextView) findViewById(R.id.shares);
         getStockDetailRequest(ticker);
-        getPortfolioAmount();
+
         about = (TextView) findViewById(R.id.aboutContent);
         getNewsItems(ticker);
         getHistoricalData(ticker);
@@ -164,7 +174,7 @@ public class StockDetailActivity extends AppCompatActivity {
 
     public void getStockDetailRequest(String ticker){
 
-        RequestQueue rq = Volley.newRequestQueue(StockDetailActivity.this);
+
         String url = "http://stockbroker2-env.eba-3yim8bsf.us-west-2.elasticbeanstalk.com/details/" + ticker;
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
@@ -180,9 +190,10 @@ public class StockDetailActivity extends AppCompatActivity {
                             name.setText(meta.getString("name"));
                             String lastPrice = "$" + data.getString("last");
                             Log.i(tag, lastPrice);
-                           price.setText("$" + data.getString("last"));
+                           price.setText("$" + df2.format(data.getDouble("last")));
                             tickerView.setText(data.getString("ticker"));
-                            Long changePrice = data.getLong("last") - data.getLong("prevClose");
+                            Log.i(tag, "Long " + data.getDouble("last"));
+                            Double changePrice = data.getDouble("last") - data.getDouble("prevClose");
                             if(changePrice < 0){
                                 change.setTextColor(Color.RED);
                             }
@@ -190,10 +201,13 @@ public class StockDetailActivity extends AppCompatActivity {
                                 change.setTextColor(Color.GREEN);
                             }
                             Log.i(tag, changePrice.toString());
-                            String changePriceText = "$" + changePrice;
+                            String changePriceText = "$" + df2.format(Math.abs(changePrice));
                             change.setText(changePriceText);
+                            getPortfolioAmount(data.getString("ticker"));
                             setStatGrid(data);
                             about.setText(meta.getString("description"));
+//                            constraintLayout.setVisibility(View.VISIBLE);
+//                            spinner.setVisibility(View.GONE);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -205,18 +219,25 @@ public class StockDetailActivity extends AppCompatActivity {
 
             }
         });
+        stringRequest.setTag(reqTag2);
         rq.add(stringRequest);
     }
 
-    public void getPortfolioAmount(){
+    public void getPortfolioAmount(String ticker){
         SharedPreferences portfolio = getSharedPreferences(PORFTFOLIO_FILE, MODE_PRIVATE);
-        int shareAmt = portfolio.getInt("shares", 0);
+         String portfolioJson = portfolio.getString(ticker, "");
+         Gson gson = new Gson();
+         Portfolio portfolio1 = gson.fromJson(portfolioJson,Portfolio.class);
+
+        long shareAmt = portfolio1.shares;
         if(shareAmt == 0){
             Log.i(tag, "you have 0 shares of " + getIntent().getStringExtra("ticker").toUpperCase() + " Start trading!");
             shares.setText("you have 0 shares of " + getIntent().getStringExtra("ticker").toUpperCase() + " Start trading!");
         }
         else{
-            shares.setText("Shares owned: " + shareAmt + " Market value: " + shareAmt*Integer.parseInt(price.getText().toString()));
+            String priceAmt = price.getText().toString().substring(1);
+            shares.setText("Shares owned: " + shareAmt + " Market value: " + df2.format(shareAmt*Double.parseDouble(priceAmt)));
+            //
         }
     }
 
@@ -282,7 +303,7 @@ public class StockDetailActivity extends AppCompatActivity {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 try {
-                    shareTotal.setText(s.toString()+ "x$" + priceData.getLong("last") + "/share = $" + Integer.parseInt(number.getText().toString())*priceData.getLong("last"));
+                    shareTotal.setText(s.toString()+ "x$" + priceData.getDouble("last") + "/share = $" + Integer.parseInt(number.getText().toString())*priceData.getDouble("last"));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -304,7 +325,7 @@ public class StockDetailActivity extends AppCompatActivity {
                 try {
                     String dialogTicker = stats.getString("ticker");
                     Long shareTot = priceData.getLong("last")*shares;
-                    Long cash = portfolio.getLong("cash", 20000);
+                    float cash = portfolio.getFloat("cash", 20000);
                     cash = cash - shareTot;
                     if(cash < 0){
                         Toast.makeText(StockDetailActivity.this,"Not enough money to buy", Toast.LENGTH_SHORT).show();
@@ -317,12 +338,12 @@ public class StockDetailActivity extends AppCompatActivity {
                     }
                     else {
                         Gson gson = new Gson();
-                        Portfolio newItem  = new Portfolio(dialogTicker,Double.doubleToLongBits(0.0),Double.doubleToLongBits(0.0));
+                        Portfolio newItem  = new Portfolio(dialogTicker,Double.doubleToLongBits(0.0),0.0);
                         Portfolio item = gson.fromJson(portfolio.getString(dialogTicker, gson.toJson(newItem)),Portfolio.class);
                         Long newShares = item.shares + shares;
-                        Long newCost = item.cost + shares*priceData.getLong("last");
+                        Double newCost = item.cost + shares*priceData.getDouble("last");
                         editPortfolio.putString(stats.getString("ticker"), gson.toJson(new Portfolio(stats.getString("ticker"), newShares, newCost)));
-                        editPortfolio.putLong("cash", cash);
+                        editPortfolio.putFloat("cash", cash);
                         editPortfolio.apply();
                         tradeDialog.dismiss();
                         final Dialog successDialog = new Dialog(StockDetailActivity.this);
@@ -334,6 +355,12 @@ public class StockDetailActivity extends AppCompatActivity {
                             @Override
                             public void onClick(View v) {
                                 successDialog.dismiss();
+                                try {
+                                    getPortfolioAmount(stats.getString("ticker"));
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+
                             }
                         });
                         successDialog.show();;
@@ -356,7 +383,7 @@ public class StockDetailActivity extends AppCompatActivity {
                 Long shares = Long.parseLong(number.getText().toString());
                 try {
                     String dialogTicker = stats.getString("ticker");
-                    Portfolio newItem  = new Portfolio(dialogTicker,Double.doubleToLongBits(0.0),Double.doubleToLongBits(0.0));
+                    Portfolio newItem  = new Portfolio(dialogTicker,Double.doubleToLongBits(0.0),0.0);
                     String stockData = portfolio.getString(dialogTicker, gson.toJson(newItem));
                     Portfolio portfolioItem = gson.fromJson(stockData, Portfolio.class);
                     Long currentShares = portfolioItem.shares;
@@ -377,7 +404,7 @@ public class StockDetailActivity extends AppCompatActivity {
                         Long shareTot = priceData.getLong("last") * shares;
                         cash = cash + shareTot;
                         currentShares = currentShares - shares;
-                        Long cost = portfolioItem.cost  - portfolioItem.cost/portfolioItem.shares*currentShares;
+                        Double cost = portfolioItem.cost  - portfolioItem.cost/portfolioItem.shares*currentShares;
                         editPortfolio.putLong("cash", cash);
                         editPortfolio.putString(dialogTicker, gson.toJson(new Portfolio(dialogTicker,currentShares,cost)));
                         editPortfolio.apply();
@@ -484,6 +511,15 @@ public class StockDetailActivity extends AppCompatActivity {
         });
         rq.add(stringRequest);
     }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (rq != null) {
+            rq.cancelAll(reqTag2);
+        }
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();

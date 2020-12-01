@@ -15,6 +15,8 @@ import android.widget.AdapterView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.SearchView;
+
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 //import com.example.stockbroker.
@@ -47,11 +49,14 @@ public class MainActivity extends AppCompatActivity {
     String tag = "activityOne";
     TextView textView;
     TextView tiingo, TodayDate;
-    RecyclerView rc;
+    RecyclerView rc,favoritesView;
+    ProgressBar spinner;
     SectionedRecyclerViewAdapter sectionAdapter;
     private AutoSuggestAdapter autoSuggestAdapter;
     CoordinatorLayout coordinatorLayout;
     ArrayList<String> favoritesList;
+    public static final String reqTag = "Main request";
+    RequestQueue rq;
 //    private ActivityMainBinding activityMainBinding;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,32 +64,45 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Log.i(tag,"--onCreate--");
+        spinner=(ProgressBar)findViewById(R.id.progressBar);
+        rq = Volley.newRequestQueue(MainActivity.this);
 //        textView = (TextView) findViewById(R.id.textView);
-        tiingo = (TextView) findViewById(R.id.tiingo);
-        tiingo.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent i = new Intent(Intent.ACTION_VIEW);
-                i.setData(Uri.parse("https://www.tiingo.com/"));
-                startActivity(i);
-            }
-        });
+//        tiingo = (TextView) findViewById(R.id.tiingo);
+//        tiingo.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                Intent i = new Intent(Intent.ACTION_VIEW);
+//                i.setData(Uri.parse("https://www.tiingo.com/"));
+//                startActivity(i);
+//            }
+//        });
         TodayDate = (TextView) findViewById(R.id.today_date);
         Date today = new Date();
         SimpleDateFormat df = new SimpleDateFormat("MMM dd, yyyy");
         TodayDate.setText(df.format(today));
         rc = (RecyclerView) findViewById(R.id.StockList);
         rc.setNestedScrollingEnabled(false);
+//        rc.setLayoutManager(new LinearLayoutManager(MainActivity.this));
+//        PortfolioAdapter pa = new PortfolioAdapter(this, getPortfolioData());
+//        rc.setAdapter(pa);
+//        favoritesView = (RecyclerView) findViewById(R.id.FavoritesList);
+//        favoritesView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
+//        FavoritesAdapter fa = new FavoritesAdapter(this, getFavoritesData());
+//        favoritesView.setAdapter(fa);
+
         sectionAdapter = new SectionedRecyclerViewAdapter();
         rc.setLayoutManager(new LinearLayoutManager(MainActivity.this));
         PortfolioSection portfolioSection = new PortfolioSection(getPortfolioData(),this);
         favoritesList = getFavoritesData();
-        enableSwipeToDeleteAndUndo();
+
         sectionAdapter.addSection(portfolioSection);
         sectionAdapter.addSection(new FavoritesSection(favoritesList,this));
+        enableSwipeToDeleteAndUndo();
 
 
         rc.setAdapter(sectionAdapter);
+        spinner.setVisibility(View.GONE);
+
 
 
 
@@ -100,6 +118,17 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         Log.i(tag,"--onResume--");
+        sectionAdapter = new SectionedRecyclerViewAdapter();
+        rc.setLayoutManager(new LinearLayoutManager(MainActivity.this));
+        PortfolioSection portfolioSection = new PortfolioSection(getPortfolioData(),this);
+        favoritesList = getFavoritesData();
+
+        sectionAdapter.addSection(portfolioSection);
+        sectionAdapter.addSection(new FavoritesSection(favoritesList,this));
+        enableSwipeToDeleteAndUndo();
+
+
+        rc.setAdapter(sectionAdapter);
     }
 
     @Override
@@ -118,6 +147,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         Log.i(tag,"--onStop--");
+        if(rq!=null){
+            rq.cancelAll(reqTag);
+        }
     }
 
     @Override
@@ -190,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
     }
     public void makeAutoCompleteRequest(String searchText, SearchView.SearchAutoComplete searchAutoComplete){
 
-        RequestQueue rq = Volley.newRequestQueue(MainActivity.this);
+
         String url = "http://stockbroker2-env.eba-3yim8bsf.us-west-2.elasticbeanstalk.com/search/" + searchText;
 
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
@@ -223,6 +255,7 @@ public class MainActivity extends AppCompatActivity {
                     Log.i(tag, error.toString());
             }
         });
+        stringRequest.setTag(reqTag);
         rq.add(stringRequest);
     }
 
