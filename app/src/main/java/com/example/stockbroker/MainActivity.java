@@ -2,7 +2,9 @@ package com.example.stockbroker;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -10,6 +12,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AdapterView;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -17,6 +21,9 @@ import android.widget.Toast;
 //import android.widget.SearchView;
 import androidx.appcompat.widget.AppCompatAutoCompleteTextView;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -24,15 +31,27 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.gson.Gson;
+
 import org.json.*;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Map;
+
+import io.github.luizgrp.sectionedrecyclerviewadapter.SectionedRecyclerViewAdapter;
 
 public class MainActivity extends AppCompatActivity {
     String tag = "activityOne";
     TextView textView;
+    TextView tiingo, TodayDate;
     RecyclerView rc;
+    SectionedRecyclerViewAdapter sectionAdapter;
     private AutoSuggestAdapter autoSuggestAdapter;
+    CoordinatorLayout coordinatorLayout;
+    ArrayList<String> favoritesList;
 //    private ActivityMainBinding activityMainBinding;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,7 +60,32 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Log.i(tag,"--onCreate--");
 //        textView = (TextView) findViewById(R.id.textView);
+        tiingo = (TextView) findViewById(R.id.tiingo);
+        tiingo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(Intent.ACTION_VIEW);
+                i.setData(Uri.parse("https://www.tiingo.com/"));
+                startActivity(i);
+            }
+        });
+        TodayDate = (TextView) findViewById(R.id.today_date);
+        Date today = new Date();
+        SimpleDateFormat df = new SimpleDateFormat("MMM dd, yyyy");
+        TodayDate.setText(df.format(today));
         rc = (RecyclerView) findViewById(R.id.StockList);
+        rc.setNestedScrollingEnabled(false);
+        sectionAdapter = new SectionedRecyclerViewAdapter();
+        rc.setLayoutManager(new LinearLayoutManager(MainActivity.this));
+        PortfolioSection portfolioSection = new PortfolioSection(getPortfolioData(),this);
+        favoritesList = getFavoritesData();
+        enableSwipeToDeleteAndUndo();
+        sectionAdapter.addSection(portfolioSection);
+        sectionAdapter.addSection(new FavoritesSection(favoritesList,this));
+
+
+        rc.setAdapter(sectionAdapter);
+
 
 
     }
@@ -181,4 +225,51 @@ public class MainActivity extends AppCompatActivity {
         });
         rq.add(stringRequest);
     }
+
+    public ArrayList<Portfolio> getPortfolioData(){
+        ArrayList<Portfolio> portfolioItems = new ArrayList<>();
+        SharedPreferences portfolio = getSharedPreferences("portfolio", MODE_PRIVATE);
+        Gson gson = new Gson();
+        Map<String,?> allEntries = portfolio.getAll();
+        for(Map.Entry<String,?> entry: allEntries.entrySet()){
+            if(!entry.getKey().equals("cash")){
+                Portfolio item = gson.fromJson((String) entry.getValue(),Portfolio.class);
+                portfolioItems.add(item);
+            }
+        }
+        return portfolioItems;
+    }
+
+    public ArrayList<String> getFavoritesData(){
+        ArrayList<String> favoritesItems = new ArrayList<>();
+        SharedPreferences watchlist = getSharedPreferences("watchlist", MODE_PRIVATE);
+        Map<String,?> allEntries = watchlist.getAll();
+        for(Map.Entry<String,?> entry: allEntries.entrySet()){
+            favoritesItems.add((String) entry.getValue());
+        }
+        return  favoritesItems;
+    }
+    private void enableSwipeToDeleteAndUndo() {
+        SwipeToDeleteCallback swipeToDeleteCallback = new SwipeToDeleteCallback(this) {
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int i) {
+
+
+                final int position = (viewHolder.getAdapterPosition()+1)-getPortfolioData().size()-1;
+                final String item = getFavoritesData().get(position);
+
+                SharedPreferences watchlist = getSharedPreferences("watchlist", MODE_PRIVATE);
+                SharedPreferences.Editor editor = watchlist.edit();
+                editor.remove(item);
+                favoritesList.remove(position);
+
+
+
+            }
+        };
+
+        ItemTouchHelper itemTouchhelper = new ItemTouchHelper(swipeToDeleteCallback);
+        itemTouchhelper.attachToRecyclerView(rc);
+    }
+
 }

@@ -37,6 +37,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -48,8 +50,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.time.*;
@@ -58,6 +64,7 @@ import java.time.temporal.ChronoUnit;
 public class StockDetailActivity extends AppCompatActivity {
     TextView tickerView,name,price,change,portfolio, shares, about, showMore;
     GridView statGrid;
+    WebView wv;
     String tag = "detailActivity";
     boolean isSaved = false;
     private Timer timer = new Timer();
@@ -65,6 +72,7 @@ public class StockDetailActivity extends AppCompatActivity {
     public static final String PORFTFOLIO_FILE = "portfolio";
     JSONObject stats;
     JSONObject priceData;
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         setTheme(R.style.Theme_StockBroker);
@@ -73,21 +81,23 @@ public class StockDetailActivity extends AppCompatActivity {
         Intent stockDetail = getIntent();
         String ticker = stockDetail.getStringExtra("ticker");
         Log.i(tag,ticker);
+        wv = (WebView) findViewById(R.id.webView);
+        wv.getSettings().setJavaScriptEnabled(true);
+        wv.clearCache(true);
+        wv.getSettings().setDomStorageEnabled(true);
+        wv.setWebViewClient(new WebViewClient());
+        wv.loadUrl("file:///android_asset/chart.html");
         tickerView = (TextView) findViewById(R.id.ticker);
         name = (TextView) findViewById(R.id.name);
         price = (TextView) findViewById(R.id.price);
         change = (TextView) findViewById(R.id.change);
         shares = (TextView) findViewById(R.id.shares);
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                getStockDetailRequest(ticker);
-            }
-        }, 0, 15*1000);
-
+        getStockDetailRequest(ticker);
         getPortfolioAmount();
         about = (TextView) findViewById(R.id.aboutContent);
         getNewsItems(ticker);
+        getHistoricalData(ticker);
+
 
 
 
@@ -446,8 +456,38 @@ public class StockDetailActivity extends AppCompatActivity {
         });
         rq.add(newsRequest);
     }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public void getHistoricalData(String ticker){
+        RequestQueue rq = Volley.newRequestQueue(StockDetailActivity.this);
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        Date date = new Date();
+
+        String url = "http://stockbroker2-env.eba-3yim8bsf.us-west-2.elasticbeanstalk.com/history/" + ticker+ '/' + df.format(date);
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                Log.i(tag, response);
+                wv.setWebViewClient(new WebViewClient(){
+                    public void onPageFinished(WebView view,String url){
+                        wv.loadUrl("javascript:loadGraph(" + response + ")");
+                    }
+
+                });
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+            }
+        });
+        rq.add(stringRequest);
+    }
     @Override
     protected void onDestroy() {
         super.onDestroy();
     }
+
+
 }
