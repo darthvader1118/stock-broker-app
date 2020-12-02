@@ -3,6 +3,7 @@ package com.example.stockbroker;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.util.Log;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -28,7 +29,7 @@ import io.github.luizgrp.sectionedrecyclerviewadapter.SectionParameters;
 import io.github.luizgrp.sectionedrecyclerviewadapter.utils.EmptyViewHolder;
 
 public class FavoritesSection extends Section {
-    private Timer timer;
+
     Context c;
     ArrayList<String> favoritesItems;
     private RequestQueue rq;
@@ -36,14 +37,14 @@ public class FavoritesSection extends Section {
         this.favoritesItems = favoritesItems;
     }
 
-    public FavoritesSection(ArrayList<String> favoritesList, Context context, RequestQueue rq, Timer timer) {
+    public FavoritesSection(ArrayList<String> favoritesList, Context context, RequestQueue rq) {
         super(SectionParameters.builder().itemResourceId(R.layout.favorites_item)
            //    .headerResourceId(R.layout.favorites_header)
                 .build());
         this.c = context;
         this.favoritesItems = favoritesList;
         this.rq = rq;
-        this.timer = timer;
+
     }
 
     @Override
@@ -63,7 +64,9 @@ public class FavoritesSection extends Section {
         final PortfolioHolder favoritesHolder = (PortfolioHolder) holder;
         favoritesHolder.tickerView.setText(favoritesItems.get(position));
         String url = "http://stockbroker2-env.eba-3yim8bsf.us-west-2.elasticbeanstalk.com/details/" + favoritesItems.get(position);
-        timer.scheduleAtFixedRate(new TimerTask() {
+        String tag = "item";
+        favoritesHolder.resetTimer();
+        favoritesHolder.timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 int pos = position;
@@ -73,6 +76,7 @@ public class FavoritesSection extends Section {
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
+                            Log.i(tag,response.toString());
                             JSONObject data = response.getJSONObject("data");
                             JSONObject meta = response.getJSONObject("meta");
                             Double currentPrice = data.getDouble("last");

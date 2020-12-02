@@ -100,11 +100,11 @@ public class MainActivity extends AppCompatActivity {
         sectionAdapter = new SectionedRecyclerViewAdapter();
         rc.setLayoutManager(new LinearLayoutManager(MainActivity.this));
         portfolioList = getPortfolioData();
-        PortfolioSection portfolioSection = new PortfolioSection(portfolioList,this, rq, timer);
+        PortfolioSection portfolioSection = new PortfolioSection(portfolioList,this, rq);
         favoritesList = getFavoritesData();
 
         sectionAdapter.addSection(portfolioSection);
-        sectionAdapter.addSection(new FavoritesSection(favoritesList,this, rq, timer));
+        sectionAdapter.addSection(new FavoritesSection(favoritesList,this, rq));
         enableSwipeToDeleteAndUndo();
 
 
@@ -127,15 +127,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        timer = new Timer();
         Log.i(tag,"--onResume--");
+        timer = new Timer();
         sectionAdapter = new SectionedRecyclerViewAdapter();
         rc.setLayoutManager(new LinearLayoutManager(MainActivity.this));
-        PortfolioSection portfolioSection = new PortfolioSection(getPortfolioData(),this, rq, timer);
+        PortfolioSection portfolioSection = new PortfolioSection(getPortfolioData(),this, rq);
         favoritesList = getFavoritesData();
         portfolioList = getPortfolioData();
         sectionAdapter.addSection(portfolioSection);
-        sectionAdapter.addSection(new FavoritesSection(favoritesList,this, rq, timer));
+        sectionAdapter.addSection(new FavoritesSection(favoritesList,this, rq));
 
         rc.setAdapter(sectionAdapter);
         enableSwipeToDeleteAndUndo();
@@ -158,10 +158,17 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         Log.i(tag,"--onStop--");
-        timer.cancel();
+        //timer.cancel();
         if(rq!=null){
             rq.cancelAll("item");
         }
+        for(int i = 0; i < rc.getChildCount(); i++){
+            PortfolioHolder item = (PortfolioHolder) rc.findViewHolderForAdapterPosition(i);
+            String itemString = item.toString();
+
+            item.destroyTimer();
+        }
+
     }
 
     @Override
@@ -324,9 +331,11 @@ public class MainActivity extends AppCompatActivity {
                     //sectionAdapter.notifyItemRemoved(i);
                     //favoritesList.remove(position);
                    // favoritesSection.setFavoritesItems(favoritesList);
+                    PortfolioHolder swipedItemHolder = (PortfolioHolder) viewHolder;
+                    swipedItemHolder.destroyTimer();
                     favoritesSection.removeItem(position);
-                    timer.cancel();
-                    timer = new Timer();
+//                    timer.cancel();
+//                    timer = new Timer();
                     sectionAdapter.notifyItemRemoved(pos);
 //                    sectionAdapter = new SectionedRecyclerViewAdapter();
 //                    PortfolioSection portfolioSectionNew = new PortfolioSection(getPortfolioData(),MainActivity.this);

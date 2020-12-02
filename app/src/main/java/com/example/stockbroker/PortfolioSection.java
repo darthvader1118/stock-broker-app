@@ -32,12 +32,12 @@ import io.github.luizgrp.sectionedrecyclerviewadapter.utils.EmptyViewHolder;
 //import io.github.luizgrp.sectionedrecyclerviewadapter.R;
 
 public class PortfolioSection extends Section {
-    private Timer timer;
+
     private RequestQueue rq;
     Context c;
     ArrayList<Portfolio> portfolioItems;
 //    private final ClickListener clickListener;
-    public PortfolioSection(ArrayList<Portfolio> portfolioList, Context context, RequestQueue rq, Timer timer){
+    public PortfolioSection(ArrayList<Portfolio> portfolioList, Context context, RequestQueue rq){
 
         super(SectionParameters.builder().itemResourceId(R.layout.favorites_item)
 //                .headerResourceId(R.layout.portfolio_header)
@@ -45,7 +45,7 @@ public class PortfolioSection extends Section {
         this.portfolioItems = portfolioList;
         this.c = context;
         this.rq = rq;
-        this.timer = timer;
+
 //        this.clickListener = clickListener;
     }
     @Override
@@ -64,11 +64,14 @@ public class PortfolioSection extends Section {
         PortfolioHolder portfolioHolder = (PortfolioHolder) holder;
         portfolioHolder.tickerView.setText(portfolioItems.get(position).ticker);
         portfolioHolder.sharesView.setText(portfolioItems.get(position).shares.toString() + " shares");
-        timer.scheduleAtFixedRate(new TimerTask() {
+        String url = "http://stockbroker2-env.eba-3yim8bsf.us-west-2.elasticbeanstalk.com/details/" + portfolioItems.get(position).ticker;
+        portfolioHolder.resetTimer();
+        portfolioHolder.timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
 
-                String url = "http://stockbroker2-env.eba-3yim8bsf.us-west-2.elasticbeanstalk.com/details/" + portfolioItems.get(position).ticker;
+
+
                 JsonObjectRequest priceRequest = new JsonObjectRequest(Request.Method.GET, url,null, new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
@@ -120,6 +123,7 @@ public class PortfolioSection extends Section {
 
 
     }
+
  //   @Override
 //    public RecyclerView.ViewHolder getHeaderViewHolder(View view){
 //        return new EmptyViewHolder(view);

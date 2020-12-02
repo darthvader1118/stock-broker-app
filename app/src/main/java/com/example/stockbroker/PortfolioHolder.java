@@ -7,10 +7,13 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.Timer;
+
 public class PortfolioHolder extends RecyclerView.ViewHolder{
     final View rootView;
     ImageView line,arrow;
     TextView tickerView, sharesView, price, change;
+    Timer timer;
     public PortfolioHolder(@NonNull View itemView) {
         super(itemView);
         this.rootView = itemView;
@@ -20,5 +23,21 @@ public class PortfolioHolder extends RecyclerView.ViewHolder{
         this.sharesView = (TextView) itemView.findViewById(R.id.subtitle);
         this.price = (TextView) itemView.findViewById(R.id.price_item);
         this.change = (TextView) itemView.findViewById(R.id.change_price);
+    }
+
+    public void resetTimer(){
+        if(timer != null) {
+            destroyTimer();
+        }
+        else{
+            timer = new Timer();
+        }
+    }
+    public void destroyTimer(){
+        if(timer != null) {
+            this.timer.cancel();
+            this.timer.purge();
+            this.timer = null;
+        }
     }
 }
