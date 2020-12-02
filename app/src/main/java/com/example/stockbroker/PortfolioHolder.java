@@ -8,10 +8,12 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 public class PortfolioHolder extends RecyclerView.ViewHolder{
+    final View rootView;
     ImageView line,arrow;
     TextView tickerView, sharesView, price, change;
     public PortfolioHolder(@NonNull View itemView) {
         super(itemView);
+        this.rootView = itemView;
         this.arrow = (ImageView) itemView.findViewById(R.id.arrow);
         this.line =  (ImageView) itemView.findViewById(R.id.chart);
         this.tickerView = (TextView) itemView.findViewById(R.id.item_ticker);

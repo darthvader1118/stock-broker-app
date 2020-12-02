@@ -28,15 +28,22 @@ import io.github.luizgrp.sectionedrecyclerviewadapter.SectionParameters;
 import io.github.luizgrp.sectionedrecyclerviewadapter.utils.EmptyViewHolder;
 
 public class FavoritesSection extends Section {
-    private Timer timer = new Timer();
+    private Timer timer;
     Context c;
     ArrayList<String> favoritesItems;
-    public FavoritesSection(ArrayList<String> favoritesList, Context context) {
+    private RequestQueue rq;
+    public void setFavoritesItems(ArrayList<String> favoritesItems) {
+        this.favoritesItems = favoritesItems;
+    }
+
+    public FavoritesSection(ArrayList<String> favoritesList, Context context, RequestQueue rq, Timer timer) {
         super(SectionParameters.builder().itemResourceId(R.layout.favorites_item)
-               // .headerResourceId(R.layout.favorites_header)
+           //    .headerResourceId(R.layout.favorites_header)
                 .build());
         this.c = context;
         this.favoritesItems = favoritesList;
+        this.rq = rq;
+        this.timer = timer;
     }
 
     @Override
@@ -50,15 +57,18 @@ public class FavoritesSection extends Section {
     }
 
     @Override
-    public void onBindItemViewHolder(RecyclerView.ViewHolder holder, int position) {
+    public void onBindItemViewHolder(final RecyclerView.ViewHolder holder,final int position) {
+
         DecimalFormat df2 = new DecimalFormat("#.##");
-        PortfolioHolder favoritesHolder = (PortfolioHolder) holder;
+        final PortfolioHolder favoritesHolder = (PortfolioHolder) holder;
         favoritesHolder.tickerView.setText(favoritesItems.get(position));
+        String url = "http://stockbroker2-env.eba-3yim8bsf.us-west-2.elasticbeanstalk.com/details/" + favoritesItems.get(position);
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
+                int pos = position;
                 RequestQueue rq = Volley.newRequestQueue(c);
-                String url = "http://stockbroker2-env.eba-3yim8bsf.us-west-2.elasticbeanstalk.com/details/" + favoritesItems.get(position);
+
                 JsonObjectRequest priceRequest = new JsonObjectRequest(Request.Method.GET, url,null, new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
@@ -89,6 +99,7 @@ public class FavoritesSection extends Section {
 
                     }
                 });
+                priceRequest.setTag("item");
                 rq.add(priceRequest);
             }
         },0,15*1000);
@@ -101,9 +112,12 @@ public class FavoritesSection extends Section {
             }
         });
     }
- //   @Override
+//    @Override
 //    public RecyclerView.ViewHolder getHeaderViewHolder(View view) {
 //        // return an empty instance of ViewHolder for the headers of this section
 //        return new EmptyViewHolder(view);
 //    }
+ public void removeItem(int position) {
+     favoritesItems.remove(position);
+ }
 }

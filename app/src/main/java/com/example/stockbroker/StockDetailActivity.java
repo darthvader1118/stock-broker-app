@@ -37,6 +37,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.Window;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ArrayAdapter;
@@ -66,6 +67,7 @@ import java.time.temporal.ChronoUnit;
 public class StockDetailActivity extends AppCompatActivity {
     private static DecimalFormat df2 = new DecimalFormat("#.##");
     ConstraintLayout constraintLayout;
+    ProgressBar spinner2;
     private ProgressBar spinner;
     TextView tickerView,name,price,change,portfolio, shares, about, showMore;
     GridView statGrid;
@@ -91,6 +93,10 @@ public class StockDetailActivity extends AppCompatActivity {
         Intent stockDetail = getIntent();
         String ticker = stockDetail.getStringExtra("ticker");
         Log.i(tag,ticker);
+        spinner2=(ProgressBar)findViewById(R.id.spinner_detail);
+        constraintLayout = (ConstraintLayout) findViewById(R.id.stock_details);
+        spinner2.setVisibility(View.VISIBLE);
+        constraintLayout.setVisibility(View.GONE);
         wv = (WebView) findViewById(R.id.webView);
         wv.getSettings().setJavaScriptEnabled(true);
         wv.clearCache(true);
@@ -206,8 +212,8 @@ public class StockDetailActivity extends AppCompatActivity {
                             getPortfolioAmount(data.getString("ticker"));
                             setStatGrid(data);
                             about.setText(meta.getString("description"));
-//                            constraintLayout.setVisibility(View.VISIBLE);
-//                            spinner.setVisibility(View.GONE);
+                            constraintLayout.setVisibility(View.VISIBLE);
+                            spinner2.setVisibility(View.GONE);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -226,19 +232,25 @@ public class StockDetailActivity extends AppCompatActivity {
     public void getPortfolioAmount(String ticker){
         SharedPreferences portfolio = getSharedPreferences(PORFTFOLIO_FILE, MODE_PRIVATE);
          String portfolioJson = portfolio.getString(ticker, "");
-         Gson gson = new Gson();
-         Portfolio portfolio1 = gson.fromJson(portfolioJson,Portfolio.class);
+         if(portfolioJson== ""){
+             Portfolio portfolio1 = new Portfolio(ticker, new Long(0),new Double(0));
+             Log.i(tag, "you have 0 shares of " + getIntent().getStringExtra("ticker").toUpperCase() + " Start trading!");
+             shares.setText("you have 0 shares of " + getIntent().getStringExtra("ticker").toUpperCase() + " Start trading!");
+         }else{
+             Gson gson = new Gson();
+             Portfolio portfolio1 = gson.fromJson(portfolioJson,Portfolio.class);
+             long shareAmt = portfolio1.shares;
+             if(shareAmt == 0){
+                 Log.i(tag, "you have 0 shares of " + getIntent().getStringExtra("ticker").toUpperCase() + " Start trading!");
+                 shares.setText("you have 0 shares of " + getIntent().getStringExtra("ticker").toUpperCase() + " Start trading!");
+             }
+             else{
+                 String priceAmt = price.getText().toString().substring(1);
+                 shares.setText("Shares owned: " + shareAmt + " Market value: " + df2.format(shareAmt*Double.parseDouble(priceAmt)));
+                 //
+             }
+         }
 
-        long shareAmt = portfolio1.shares;
-        if(shareAmt == 0){
-            Log.i(tag, "you have 0 shares of " + getIntent().getStringExtra("ticker").toUpperCase() + " Start trading!");
-            shares.setText("you have 0 shares of " + getIntent().getStringExtra("ticker").toUpperCase() + " Start trading!");
-        }
-        else{
-            String priceAmt = price.getText().toString().substring(1);
-            shares.setText("Shares owned: " + shareAmt + " Market value: " + df2.format(shareAmt*Double.parseDouble(priceAmt)));
-            //
-        }
     }
 
     public void setStatGrid(JSONObject stats) throws JSONException {
@@ -303,7 +315,14 @@ public class StockDetailActivity extends AppCompatActivity {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 try {
-                    shareTotal.setText(s.toString()+ "x$" + priceData.getDouble("last") + "/share = $" + Integer.parseInt(number.getText().toString())*priceData.getDouble("last"));
+                    if(s.toString().equals("")){
+                        shareTotal.setText( "0 x$" + priceData.getDouble("last") + "/share = $" + Integer.parseInt("0")*priceData.getDouble("last"));
+                    }else {
+                        Double shareNum = Double.parseDouble(number.getText().toString());
+                        Double total = shareNum * priceData.getDouble("last");
+                        String sum = s.toString() + "x$" + priceData.getDouble("last") + "/share = $" + total;
+                        shareTotal.setText(sum);
+                    }
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -400,14 +419,20 @@ public class StockDetailActivity extends AppCompatActivity {
                         Toast.makeText(StockDetailActivity.this,"please enter valid amount", Toast.LENGTH_SHORT).show();
                     }
                     else{
-                        Long cash = portfolio.getLong("cash", 20000);
-                        Long shareTot = priceData.getLong("last") * shares;
-                        cash = cash + shareTot;
+                        float cash = portfolio.getFloat("cash", 20000);
+                        Double shareTot = priceData.getDouble("last") * shares;
+                        cash = cash + shareTot.floatValue();
                         currentShares = currentShares - shares;
-                        Double cost = portfolioItem.cost  - portfolioItem.cost/portfolioItem.shares*currentShares;
-                        editPortfolio.putLong("cash", cash);
-                        editPortfolio.putString(dialogTicker, gson.toJson(new Portfolio(dialogTicker,currentShares,cost)));
-                        editPortfolio.apply();
+                        Double cost = portfolioItem.cost  - portfolioItem.cost/portfolioItem.shares*shares;
+                        editPortfolio.putFloat("cash", cash);
+                        if(currentShares.compareTo(new Long(0)) == 0){
+                            editPortfolio.remove(dialogTicker);
+                            editPortfolio.commit();
+                        }
+                        else {
+                            editPortfolio.putString(dialogTicker, gson.toJson(new Portfolio(dialogTicker,currentShares,cost)));
+                            editPortfolio.apply();
+                        }
                         tradeDialog.dismiss();
                         final Dialog successDialog = new Dialog(StockDetailActivity.this);
                         successDialog.setContentView(R.layout.success_dialog);
@@ -418,6 +443,11 @@ public class StockDetailActivity extends AppCompatActivity {
                             @Override
                             public void onClick(View v) {
                                 successDialog.dismiss();
+                                try {
+                                    getPortfolioAmount(stats.getString("ticker"));
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
                             }
                         });
                         successDialog.show();;
@@ -431,6 +461,8 @@ public class StockDetailActivity extends AppCompatActivity {
 
 
         tradeDialog.show();
+        Window window = tradeDialog.getWindow();
+        window.setLayout(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.WRAP_CONTENT);
 
 
 

@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.util.Log;
 import android.view.View;
 
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.android.volley.Request;
@@ -31,16 +32,21 @@ import io.github.luizgrp.sectionedrecyclerviewadapter.utils.EmptyViewHolder;
 //import io.github.luizgrp.sectionedrecyclerviewadapter.R;
 
 public class PortfolioSection extends Section {
-    private Timer timer = new Timer();
+    private Timer timer;
+    private RequestQueue rq;
     Context c;
     ArrayList<Portfolio> portfolioItems;
-    public PortfolioSection(ArrayList<Portfolio> portfolioList, Context context){
+//    private final ClickListener clickListener;
+    public PortfolioSection(ArrayList<Portfolio> portfolioList, Context context, RequestQueue rq, Timer timer){
 
         super(SectionParameters.builder().itemResourceId(R.layout.favorites_item)
-               // .headerResourceId(R.layout.portfolio_header)
+//                .headerResourceId(R.layout.portfolio_header)
                 .build());
         this.portfolioItems = portfolioList;
         this.c = context;
+        this.rq = rq;
+        this.timer = timer;
+//        this.clickListener = clickListener;
     }
     @Override
     public int getContentItemsTotal() {
@@ -61,7 +67,7 @@ public class PortfolioSection extends Section {
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                RequestQueue rq = Volley.newRequestQueue(c);
+
                 String url = "http://stockbroker2-env.eba-3yim8bsf.us-west-2.elasticbeanstalk.com/details/" + portfolioItems.get(position).ticker;
                 JsonObjectRequest priceRequest = new JsonObjectRequest(Request.Method.GET, url,null, new Response.Listener<JSONObject>() {
                     @Override
@@ -93,10 +99,14 @@ public class PortfolioSection extends Section {
 
                     }
                 });
+                priceRequest.setTag("item");
                 rq.add(priceRequest);
 
             }
         }, 0, 15 * 1000);
+//        , @NonNull final ClickListener clickListener
+//        portfolioHolder.rootView.setOnClickListener(v ->
+//                clickListener.onItemRootViewClicked(this, portfolioHolder.getAdapterPosition()));
         portfolioHolder.arrow.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -110,9 +120,9 @@ public class PortfolioSection extends Section {
 
 
     }
-//    @Override
+ //   @Override
 //    public RecyclerView.ViewHolder getHeaderViewHolder(View view){
-//        return new PortfolioHeaderViewHolder(view);
+//        return new EmptyViewHolder(view);
 //    }
 //    @Override
 //    public void onBindHeaderViewHolder(final RecyclerView.ViewHolder holder) {

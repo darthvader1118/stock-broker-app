@@ -23,6 +23,7 @@ import android.widget.Toast;
 //import android.widget.SearchView;
 import androidx.appcompat.widget.AppCompatAutoCompleteTextView;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -40,9 +41,12 @@ import org.json.*;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
+import java.util.Timer;
 
+import io.github.luizgrp.sectionedrecyclerviewadapter.Section;
 import io.github.luizgrp.sectionedrecyclerviewadapter.SectionedRecyclerViewAdapter;
 
 public class MainActivity extends AppCompatActivity {
@@ -53,29 +57,32 @@ public class MainActivity extends AppCompatActivity {
     ProgressBar spinner;
     SectionedRecyclerViewAdapter sectionAdapter;
     private AutoSuggestAdapter autoSuggestAdapter;
-    CoordinatorLayout coordinatorLayout;
     ArrayList<String> favoritesList;
+    ArrayList<Portfolio> portfolioList;
     public static final String reqTag = "Main request";
     RequestQueue rq;
-//    private ActivityMainBinding activityMainBinding;
+    ConstraintLayout constraintLayout;
+    Timer timer = new Timer();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         setTheme(R.style.Theme_StockBroker);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Log.i(tag,"--onCreate--");
+        constraintLayout = (ConstraintLayout) findViewById(R.id.main_page);
+        constraintLayout.setVisibility(View.GONE);
         spinner=(ProgressBar)findViewById(R.id.progressBar);
         rq = Volley.newRequestQueue(MainActivity.this);
 //        textView = (TextView) findViewById(R.id.textView);
-//        tiingo = (TextView) findViewById(R.id.tiingo);
-//        tiingo.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                Intent i = new Intent(Intent.ACTION_VIEW);
-//                i.setData(Uri.parse("https://www.tiingo.com/"));
-//                startActivity(i);
-//            }
-//        });
+        tiingo = (TextView) findViewById(R.id.tiingo);
+        tiingo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(Intent.ACTION_VIEW);
+                i.setData(Uri.parse("https://www.tiingo.com/"));
+                startActivity(i);
+            }
+        });
         TodayDate = (TextView) findViewById(R.id.today_date);
         Date today = new Date();
         SimpleDateFormat df = new SimpleDateFormat("MMM dd, yyyy");
@@ -92,16 +99,19 @@ public class MainActivity extends AppCompatActivity {
 
         sectionAdapter = new SectionedRecyclerViewAdapter();
         rc.setLayoutManager(new LinearLayoutManager(MainActivity.this));
-        PortfolioSection portfolioSection = new PortfolioSection(getPortfolioData(),this);
+        portfolioList = getPortfolioData();
+        PortfolioSection portfolioSection = new PortfolioSection(portfolioList,this, rq, timer);
         favoritesList = getFavoritesData();
 
         sectionAdapter.addSection(portfolioSection);
-        sectionAdapter.addSection(new FavoritesSection(favoritesList,this));
+        sectionAdapter.addSection(new FavoritesSection(favoritesList,this, rq, timer));
         enableSwipeToDeleteAndUndo();
 
 
+
         rc.setAdapter(sectionAdapter);
-        spinner.setVisibility(View.GONE);
+        enableDragandDrop();
+//        spinner.setVisibility(View.GONE);
 
 
 
@@ -117,18 +127,19 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        timer = new Timer();
         Log.i(tag,"--onResume--");
         sectionAdapter = new SectionedRecyclerViewAdapter();
         rc.setLayoutManager(new LinearLayoutManager(MainActivity.this));
-        PortfolioSection portfolioSection = new PortfolioSection(getPortfolioData(),this);
+        PortfolioSection portfolioSection = new PortfolioSection(getPortfolioData(),this, rq, timer);
         favoritesList = getFavoritesData();
-
+        portfolioList = getPortfolioData();
         sectionAdapter.addSection(portfolioSection);
-        sectionAdapter.addSection(new FavoritesSection(favoritesList,this));
-        enableSwipeToDeleteAndUndo();
-
+        sectionAdapter.addSection(new FavoritesSection(favoritesList,this, rq, timer));
 
         rc.setAdapter(sectionAdapter);
+        enableSwipeToDeleteAndUndo();
+        enableDragandDrop();
     }
 
     @Override
@@ -147,8 +158,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         Log.i(tag,"--onStop--");
+        timer.cancel();
         if(rq!=null){
-            rq.cancelAll(reqTag);
+            rq.cancelAll("item");
         }
     }
 
@@ -280,21 +292,56 @@ public class MainActivity extends AppCompatActivity {
         for(Map.Entry<String,?> entry: allEntries.entrySet()){
             favoritesItems.add((String) entry.getValue());
         }
+        spinner.setVisibility(View.GONE);
+        constraintLayout.setVisibility(View.VISIBLE);
         return  favoritesItems;
     }
     private void enableSwipeToDeleteAndUndo() {
         SwipeToDeleteCallback swipeToDeleteCallback = new SwipeToDeleteCallback(this) {
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int i) {
+                if(rq!=null){
+                    rq.cancelAll("item");
+                }
+
+                int pos = viewHolder.getAdapterPosition();
+               Section portfolioSection =  sectionAdapter.getSectionForPosition(viewHolder.getAdapterPosition());
+                if(portfolioSection instanceof PortfolioSection){
+                    Toast.makeText(MainActivity.this,"can't delete portfolio item",Toast.LENGTH_SHORT).show();
+                    sectionAdapter.notifyDataSetChanged();
+
+                }
+                else {
+
+                    final int position = sectionAdapter.getPositionInSection(viewHolder.getAdapterPosition());
+                    final String item = getFavoritesData().get(position);
+                    int count = sectionAdapter.getItemCount();
+                    SharedPreferences watchlist = getSharedPreferences("watchlist", MODE_PRIVATE);
+                    SharedPreferences.Editor editor = watchlist.edit();
+                    FavoritesSection favoritesSection = (FavoritesSection) sectionAdapter.getSectionForPosition(pos);
 
 
-                final int position = (viewHolder.getAdapterPosition()+1)-getPortfolioData().size()-1;
-                final String item = getFavoritesData().get(position);
+                    //sectionAdapter.notifyItemRemoved(i);
+                    //favoritesList.remove(position);
+                   // favoritesSection.setFavoritesItems(favoritesList);
+                    favoritesSection.removeItem(position);
+                    timer.cancel();
+                    timer = new Timer();
+                    sectionAdapter.notifyItemRemoved(pos);
+//                    sectionAdapter = new SectionedRecyclerViewAdapter();
+//                    PortfolioSection portfolioSectionNew = new PortfolioSection(getPortfolioData(),MainActivity.this);
+//                    sectionAdapter.addSection(portfolioSectionNew);
+//                    sectionAdapter.addSection(new FavoritesSection(favoritesList, MainActivity.this));
+//                    sectionAdapter.notifyItemRangeChanged(pos,favoritesList.size());
+//                    sectionAdapter.removeSection(favoritesSection);
+//                    sectionAdapter.addSection(new FavoritesSection(favoritesList, MainActivity.this));
+//                    rc.setAdapter(sectionAdapter);
+//                    sectionAdapter.notifyDataSetChanged();
 
-                SharedPreferences watchlist = getSharedPreferences("watchlist", MODE_PRIVATE);
-                SharedPreferences.Editor editor = watchlist.edit();
-                editor.remove(item);
-                favoritesList.remove(position);
+//                    rc.setAdapter(sectionAdapter);
+                    editor.remove(item.toLowerCase());
+                    editor.commit();
+                }
 
 
 
@@ -302,6 +349,47 @@ public class MainActivity extends AppCompatActivity {
         };
 
         ItemTouchHelper itemTouchhelper = new ItemTouchHelper(swipeToDeleteCallback);
+        itemTouchhelper.attachToRecyclerView(rc);
+    }
+    private void enableDragandDrop(){
+
+        ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP|ItemTouchHelper.DOWN|ItemTouchHelper.START|ItemTouchHelper.END,0) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+
+                SectionedRecyclerViewAdapter sectionedRecyclerViewAdapter = (SectionedRecyclerViewAdapter) recyclerView.getAdapter();
+                if(rq!=null){
+                    rq.cancelAll("item");
+                }
+                int fromPosition = viewHolder.getAdapterPosition();
+                int toPosition = target.getAdapterPosition();
+                Section fromSection = sectionedRecyclerViewAdapter.getSectionForPosition(fromPosition);
+                Section toSection = sectionedRecyclerViewAdapter.getSectionForPosition(toPosition);
+                boolean sameSection = fromSection.getClass().equals(toSection.getClass());
+                if(sameSection){
+                    if(fromSection instanceof FavoritesSection){
+                        Collections.swap(favoritesList,sectionedRecyclerViewAdapter.getPositionInSection(fromPosition),sectionedRecyclerViewAdapter.getPositionInSection(toPosition));
+
+                    }
+                    else{
+                        Collections.swap(portfolioList,sectionedRecyclerViewAdapter.getPositionInSection(fromPosition),sectionedRecyclerViewAdapter.getPositionInSection(toPosition));
+
+                    }
+                }
+                else{
+                        Toast.makeText(MainActivity.this,"Can't move item there", Toast.LENGTH_SHORT).show();
+                }
+
+                sectionedRecyclerViewAdapter.notifyDataSetChanged();
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+
+            }
+        };
+        ItemTouchHelper itemTouchhelper = new ItemTouchHelper(simpleCallback);
         itemTouchhelper.attachToRecyclerView(rc);
     }
 
