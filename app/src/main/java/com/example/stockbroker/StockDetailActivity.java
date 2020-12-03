@@ -48,12 +48,14 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.joda.time.format.DateTimeFormat;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.text.DateFormat;
 import java.text.DecimalFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -477,6 +479,7 @@ public class StockDetailActivity extends AppCompatActivity {
         String url = "http://stockbroker2-env.eba-3yim8bsf.us-west-2.elasticbeanstalk.com/news/" + ticker;
 
         JsonObjectRequest newsRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+
             @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void onResponse(JSONObject response) {
@@ -490,11 +493,20 @@ public class StockDetailActivity extends AppCompatActivity {
                         String articleUrl = article.getString("url");
                         String imgUrl = article.getString("urlToImage");
                         String pubDate = article.getString("publishedAt");
-//                        LocalDate published = LocalDate.parse(pubDate, DateTimeFormatter.ISO_DATE_TIME);
-//                        LocalDate now = LocalDate.now();
-//                        long dayDiff = ChronoUnit.DAYS.between(published,now);
-//                        String dateFrom = dayDiff + " days ago";
-                        String dateFrom = "something";
+                        DateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+                        Instant iparse = Instant.parse(pubDate);
+//                        Date published = sdf.parse(pubDate);
+                        LocalDate published = LocalDate.parse(pubDate, DateTimeFormatter.ISO_DATE_TIME);
+                        LocalDate now = LocalDate.now();
+                       long dayDiff = ChronoUnit.DAYS.between(published,now);
+                       String dateFrom = "";
+                       if(dayDiff <=1){
+                            dateFrom = dayDiff + " day ago";
+                       }
+                       else{
+                            dateFrom = dayDiff + " days ago";
+                       }
+//                        String dateFrom = "something";
                         NewsItem newsItem = new NewsItem(imgUrl,source, dateFrom,title,articleUrl);
                         newsItems.add(newsItem);
                 }

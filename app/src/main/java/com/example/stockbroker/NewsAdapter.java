@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.squareup.picasso.Picasso;
@@ -56,6 +58,7 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         return null;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         switch(holder.getItemViewType()){
@@ -65,6 +68,7 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 newsHolder.source.setText(newsItems.get(position).source);
                 newsHolder.dateFrom.setText(newsItems.get(position).dateFrom);
                 Picasso.get().load(newsItems.get(position).imageUri).resize(407,167).into(newsHolder.iv);
+                newsHolder.iv.setClipToOutline(true);
                 newsHolder.itemView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -104,6 +108,7 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 newsHolder2.source.setText(newsItems.get(position).source);
                 newsHolder2.dateFrom.setText(newsItems.get(position).dateFrom);
                 Picasso.get().load(newsItems.get(position).imageUri).resize(165,179).into(newsHolder2.iv);
+                newsHolder2.iv.setClipToOutline(true);
                 newsHolder2.itemView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
