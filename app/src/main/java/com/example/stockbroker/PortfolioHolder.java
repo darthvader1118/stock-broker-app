@@ -28,6 +28,7 @@ public class PortfolioHolder extends RecyclerView.ViewHolder{
     public void resetTimer(){
         if(timer != null) {
             destroyTimer();
+            timer = new Timer();
         }
         else{
             timer = new Timer();
@@ -39,5 +40,13 @@ public class PortfolioHolder extends RecyclerView.ViewHolder{
             this.timer.purge();
             this.timer = null;
         }
+    }
+
+    public String getSharesView() {
+        return sharesView.getText().toString();
+    }
+
+    public Double getPrice() {
+        return  Double.parseDouble(price.getText().toString());
     }
 }

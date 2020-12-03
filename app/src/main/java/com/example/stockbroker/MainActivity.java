@@ -39,12 +39,14 @@ import com.google.gson.Gson;
 
 import org.json.*;
 
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 import java.util.Timer;
+import java.util.TimerTask;
 
 import io.github.luizgrp.sectionedrecyclerviewadapter.Section;
 import io.github.luizgrp.sectionedrecyclerviewadapter.SectionedRecyclerViewAdapter;
@@ -111,7 +113,25 @@ public class MainActivity extends AppCompatActivity {
 
         rc.setAdapter(sectionAdapter);
         enableDragandDrop();
+
 //        spinner.setVisibility(View.GONE);
+
+
+
+                timer.scheduleAtFixedRate(new TimerTask() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                populateNetWorth();
+                            }
+                        });
+
+                    }
+                },0,15000);
+
+
 
 
 
@@ -140,6 +160,19 @@ public class MainActivity extends AppCompatActivity {
         rc.setAdapter(sectionAdapter);
         enableSwipeToDeleteAndUndo();
         enableDragandDrop();
+
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        populateNetWorth();
+                    }
+                });
+
+            }
+        },0,15000);
     }
 
     @Override
@@ -168,6 +201,7 @@ public class MainActivity extends AppCompatActivity {
 
             item.destroyTimer();
         }
+        timer.cancel();
 
     }
 
@@ -177,15 +211,6 @@ public class MainActivity extends AppCompatActivity {
         Log.i(tag,"--onDestroy--");
     }
 
-    public void onClickText(View v){
-        Intent myIntent = new Intent(MainActivity.this, newTestActivity.class);
-//        Date date = new Date();
-//        textView.setText("Today is:" + date.toString());
-//        Toast.makeText(this, "button clicked", Toast.LENGTH_LONG).show();
-        MainActivity.this.startActivity(myIntent);
-
-
-    }
 
     @SuppressLint("RestrictedApi")
     @Override
@@ -365,7 +390,10 @@ public class MainActivity extends AppCompatActivity {
         ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP|ItemTouchHelper.DOWN|ItemTouchHelper.START|ItemTouchHelper.END,0) {
             @Override
             public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-
+                PortfolioHolder from = (PortfolioHolder) viewHolder;
+                PortfolioHolder to = (PortfolioHolder) target;
+                from.destroyTimer();
+                to.destroyTimer();
                 SectionedRecyclerViewAdapter sectionedRecyclerViewAdapter = (SectionedRecyclerViewAdapter) recyclerView.getAdapter();
                 if(rq!=null){
                     rq.cancelAll("item");
@@ -382,6 +410,9 @@ public class MainActivity extends AppCompatActivity {
                     }
                     else{
                         Collections.swap(portfolioList,sectionedRecyclerViewAdapter.getPositionInSection(fromPosition),sectionedRecyclerViewAdapter.getPositionInSection(toPosition));
+                        PortfolioSection newPortfolio = (PortfolioSection)sectionedRecyclerViewAdapter.getSection(fromPosition);
+                        newPortfolio.portfolioItems= portfolioList;
+                        sectionedRecyclerViewAdapter.notifyItemMoved(fromPosition,toPosition);
 
                     }
                 }
@@ -400,6 +431,27 @@ public class MainActivity extends AppCompatActivity {
         };
         ItemTouchHelper itemTouchhelper = new ItemTouchHelper(simpleCallback);
         itemTouchhelper.attachToRecyclerView(rc);
+    }
+
+    public void populateNetWorth(){
+        Double stockValue = 0.0;
+        for(int i = 0 ; i < rc.getChildCount(); i++){
+            PortfolioHolder portfolioHolderItem = (PortfolioHolder) rc.findViewHolderForAdapterPosition(i);
+            if(portfolioHolderItem.getSharesView().matches(".*\\d.*") && portfolioHolderItem.getSharesView().contains("shares")){
+                String shareText = portfolioHolderItem.getSharesView();
+                Double shares = Double.parseDouble(shareText.split(" ")[0]);
+                Double price = Double.parseDouble(portfolioHolderItem.getPrice().toString());
+                stockValue += shares*price;
+            }
+        }
+        SharedPreferences portfolio = getSharedPreferences("portfolio", MODE_PRIVATE);
+        DecimalFormat df2 = new DecimalFormat("#.##");
+
+        float cash = portfolio.getFloat("cash", 20000);
+        Double total = stockValue + cash;
+        TextView netWorth = (TextView) findViewById(R.id.net_worth_data);
+        netWorth.setText(df2.format(total));
+
     }
 
 }
