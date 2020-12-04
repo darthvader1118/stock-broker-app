@@ -70,6 +70,7 @@ public class StockDetailActivity extends AppCompatActivity {
     private static DecimalFormat df2 = new DecimalFormat("#.##");
     ConstraintLayout constraintLayout;
     ProgressBar spinner2;
+    TextView fetching;
     private ProgressBar spinner;
     TextView tickerView,name,price,change,portfolio, shares, about, showMore;
     GridView statGrid;
@@ -96,8 +97,10 @@ public class StockDetailActivity extends AppCompatActivity {
         String ticker = stockDetail.getStringExtra("ticker");
         Log.i(tag,ticker);
         spinner2=(ProgressBar)findViewById(R.id.spinner_detail);
+        fetching = (TextView) findViewById(R.id.fetching);
         constraintLayout = (ConstraintLayout) findViewById(R.id.stock_details);
         spinner2.setVisibility(View.VISIBLE);
+        fetching.setVisibility(View.VISIBLE);
         constraintLayout.setVisibility(View.GONE);
         wv = (WebView) findViewById(R.id.webView);
         wv.getSettings().setJavaScriptEnabled(true);
@@ -157,7 +160,15 @@ public class StockDetailActivity extends AppCompatActivity {
             }
             isSaved = !isSaved;
         }
+        if(id == R.id.home){
+            onBackPressed();
+        }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
     }
 
     public void saveToWatchlist(){
@@ -167,7 +178,7 @@ public class StockDetailActivity extends AppCompatActivity {
         Log.i(tag, ticker + " saved to watchlist");
         editor.putString(ticker.toLowerCase(), ticker);
         editor.apply();
-        Toast.makeText(StockDetailActivity.this,"saved to watchlist", Toast.LENGTH_SHORT).show();
+        Toast.makeText(StockDetailActivity.this,ticker + " saved to favorites", Toast.LENGTH_SHORT).show();
     }
 
     public void removeFromWatchlist(){
@@ -177,7 +188,7 @@ public class StockDetailActivity extends AppCompatActivity {
         Log.i(tag, ticker + " removed from watchlist");
         editor.remove(ticker);
         editor.apply();
-        Toast.makeText(StockDetailActivity.this,"removed from watchlist", Toast.LENGTH_SHORT).show();
+        Toast.makeText(StockDetailActivity.this,ticker.toUpperCase() + " removed from favorites", Toast.LENGTH_SHORT).show();
     }
 
     public void getStockDetailRequest(String ticker){
@@ -216,6 +227,7 @@ public class StockDetailActivity extends AppCompatActivity {
                             about.setText(meta.getString("description"));
                             constraintLayout.setVisibility(View.VISIBLE);
                             spinner2.setVisibility(View.GONE);
+                            fetching.setVisibility(View.GONE);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -304,6 +316,11 @@ public class StockDetailActivity extends AppCompatActivity {
         header.setText("Trade " + stats.getString("name") + " shares");
         TextView shareTotal = (TextView) tradeDialog.findViewById(R.id.total);
         EditText number = (EditText) tradeDialog.findViewById(R.id.share_number);
+        TextView cashTotal = (TextView) tradeDialog.findViewById(R.id.total_amount);
+        SharedPreferences portfolio = getSharedPreferences(PORFTFOLIO_FILE,MODE_PRIVATE);
+        float cash = portfolio.getFloat("cash", 20000);
+        DecimalFormat decimalFormat = new DecimalFormat("#.##");
+        cashTotal.setText("$" + decimalFormat.format(cash) + " available to buy " + stats.getString("ticker"));
         number.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -345,9 +362,9 @@ public class StockDetailActivity extends AppCompatActivity {
                 Long shares = Long.parseLong(number.getText().toString());
                 try {
                     String dialogTicker = stats.getString("ticker");
-                    Long shareTot = priceData.getLong("last")*shares;
+                    Double shareTot = priceData.getDouble("last")*shares;
                     float cash = portfolio.getFloat("cash", 20000);
-                    cash = cash - shareTot;
+                    cash = cash - Float.parseFloat(shareTot.toString());
                     if(cash < 0){
                         Toast.makeText(StockDetailActivity.this,"Not enough money to buy", Toast.LENGTH_SHORT).show();
                     }

@@ -39,7 +39,7 @@ public class FavoritesSection extends Section {
 
     public FavoritesSection(ArrayList<String> favoritesList, Context context, RequestQueue rq) {
         super(SectionParameters.builder().itemResourceId(R.layout.favorites_item)
-           //    .headerResourceId(R.layout.favorites_header)
+//               .headerResourceId(R.layout.favorites_header)
                 .build());
         this.c = context;
         this.favoritesItems = favoritesList;

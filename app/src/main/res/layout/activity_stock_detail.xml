@@ -208,6 +208,8 @@
                 tools:layout_editor_absoluteX="0dp" />
 
 
+
+
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.core.widget.NestedScrollView>
 
@@ -218,4 +220,16 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:progressDrawable="@drawable/progress_bar" />
+
+    <TextView
+        android:id="@+id/fetching"
+        android:layout_width="300dp"
+        android:layout_height="175dp"
+        android:layout_gravity="center"
+        android:gravity="bottom"
+        android:text="Fetching Data"
+        android:textAlignment="center"
+        tools:layout_editor_absoluteX="6dp"
+        tools:layout_editor_absoluteY="432dp" />
+
 </FrameLayout>

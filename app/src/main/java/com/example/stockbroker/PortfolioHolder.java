@@ -46,7 +46,7 @@ public class PortfolioHolder extends RecyclerView.ViewHolder{
         return sharesView.getText().toString();
     }
 
-    public Double getPrice() {
-        return  Double.parseDouble(price.getText().toString());
+    public String getPrice() {
+        return  price.getText().toString();
     }
 }

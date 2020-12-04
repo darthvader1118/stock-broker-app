@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -124,7 +125,7 @@ public class PortfolioSection extends Section {
 
     }
 
- //   @Override
+//    @Override
 //    public RecyclerView.ViewHolder getHeaderViewHolder(View view){
 //        return new EmptyViewHolder(view);
 //    }

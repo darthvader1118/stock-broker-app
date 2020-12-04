@@ -410,8 +410,8 @@ public class MainActivity extends AppCompatActivity {
                     }
                     else{
                         Collections.swap(portfolioList,sectionedRecyclerViewAdapter.getPositionInSection(fromPosition),sectionedRecyclerViewAdapter.getPositionInSection(toPosition));
-                        PortfolioSection newPortfolio = (PortfolioSection)sectionedRecyclerViewAdapter.getSection(fromPosition);
-                        newPortfolio.portfolioItems= portfolioList;
+                        PortfolioSection newPortfolio = (PortfolioSection)sectionedRecyclerViewAdapter.getSectionForPosition(fromPosition);
+                       newPortfolio.portfolioItems= portfolioList;
                         sectionedRecyclerViewAdapter.notifyItemMoved(fromPosition,toPosition);
 
                     }
@@ -440,7 +440,15 @@ public class MainActivity extends AppCompatActivity {
             if(portfolioHolderItem.getSharesView().matches(".*\\d.*") && portfolioHolderItem.getSharesView().contains("shares")){
                 String shareText = portfolioHolderItem.getSharesView();
                 Double shares = Double.parseDouble(shareText.split(" ")[0]);
-                Double price = Double.parseDouble(portfolioHolderItem.getPrice().toString());
+                String priceString = portfolioHolderItem.getPrice().toString();
+                Double price = 0.0;
+                if(priceString.equals("price")){
+                    break;
+                }
+                else{
+                    price = Double.parseDouble(portfolioHolderItem.getPrice().toString());
+                }
+
                 stockValue += shares*price;
             }
         }

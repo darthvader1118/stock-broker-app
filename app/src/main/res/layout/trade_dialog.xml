@@ -80,4 +80,14 @@
         app:backgroundTint="#2E8C42"
         app:layout_constraintStart_toEndOf="@+id/buy"
         app:layout_constraintTop_toBottomOf="@+id/share_number" />
+
+    <TextView
+        android:id="@+id/total_amount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="108dp"
+        android:layout_marginBottom="28dp"
+        android:text="TextView"
+        app:layout_constraintBottom_toTopOf="@+id/sell"
+        app:layout_constraintStart_toStartOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>
